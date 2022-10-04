@@ -12,7 +12,7 @@ from scipy.signal import savgol_filter
 from scipy.signal import find_peaks as fp
 
 FILENAME = '/Users/alexstansfield/Desktop/Lab Images/04-09-22 First run Decreasing/Values/'
-TITLE = 'BLEH'
+TITLE = 'BLEH2'
 SAVE_NAME = ''
 X_VARIABLE = 'Distance (Pixels)'
 Y_VARIABLE = 'Gray Value (Intensity)'
