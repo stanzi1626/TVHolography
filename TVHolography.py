@@ -5,15 +5,11 @@ Created on Fri Feb 11 12:42:47 2022
 @author: Ryand Yandoc and Alexander Stansfield
 """
 
-from turtle import color
 import numpy as np
-import glob
 import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
-from scipy.signal import savgol_filter
-from scipy.signal import find_peaks as fp
 
-from Parameters import SAVGOL_FILTER_PARAMETERS_1, SAVGOL_FILTER_PARAMETERS_2
+from Parameters import SAVGOL_FILTER_PARAMETERS_1, SAVGOL_FILTER_PARAMETERS_2, PEAK_PROMINENCE
+from Functions import read_data, find_peaks, filter_peaks, find_linear_parameters
 
 FILENAME_1 = "2022_10_04 Second Run/Rising/Data/"
 FILENAME_2 = "2022_10_04 Second Run/Decreasing/Data/"
@@ -22,32 +18,6 @@ SAVE_FOLDER_2 = "2022_10_04 Second Run/Decreasing/Results/"
 SAVE_FOLDER_AVERAGES = "2022_10_04 Second Run/Comparison/"
 X_VARIABLE = "Voltage"
 Y_VARIABLE = 'Grey Value (Intensity)'                          
-
-def read_data(file_name):
-
-    all_data = []
-
-    for filename in glob.glob(file_name + '*.csv'):
-        data = np.array([])
-        valid_data = np.empty((0, 2))
-        invalid_index = np.array([])
-        try:
-            data = np.genfromtxt(filename, dtype='float', delimiter=',',
-                                skip_header=1)
-            nan_index = np.where(np.isnan(data))[0]
-
-            invalid_index = np.unique(np.append(invalid_index, nan_index))
-            valid_data = np.delete(data, invalid_index.astype(int), 0)
-            # print(filename, " accepted")
-
-        except IOError:
-            print("Error: ", filename, " directory not found")
-        except IndexError:
-            print("Error: ", filename," is empty")
-        
-        all_data.append([filename[-15:-13], valid_data])
-
-    return all_data
 
 def draw_plot(title, data, savgol_parameter, filename, save_folder, peak_prominence):
     fig, axs = plt.subplots(1, 2)
@@ -82,28 +52,6 @@ def draw_plot(title, data, savgol_parameter, filename, save_folder, peak_promine
 
     return np.array((int(title), 1 / np.average(peak_diff), (1 / (np.average(peak_diff) ** 2)) * np.std(peak_diff) / np.sqrt(len(peak_diff))))
 
-def find_peaks(data, savgol_parameter, peak_prominence):
-    w = savgol_filter(data[:, 1], savgol_parameter, 2)
-    peaks, _ = fp(w, prominence = peak_prominence) #0.02 for 2nd run decreasing, 0.1 for 2nd run increasing
-    return peaks, w
-
-def filter_peaks(peaks, values):
-    return peaks[np.where(values[peaks] > 0.5)]
-
-def linear_function(x, m, c):
-    return m*x + c
-
-def find_linear_parameters(data):
-    try:
-        expected, uncertainty = curve_fit(linear_function,\
-                                data[:, 0], data[:, 1], sigma = data[:, 2]) #
-    except RuntimeError:
-        print('Scipy.optimize.curve_fit was not able to find the best'
-              ' parameters, please run code again and input different'
-              ' starting guesses')
-
-    return expected[0], expected[1], np.sqrt(uncertainty[0, 0]), np.sqrt(uncertainty[1, 1])
-
 def plot_averages(data_1, data_2, save_folder):
     fig, axs = plt.subplots(1, 1)
     fig.set_size_inches(15, 6)
@@ -125,6 +73,7 @@ def plot_averages(data_1, data_2, save_folder):
 
     plt.tight_layout()
     plt.savefig(save_folder + "Voltage against (average fringe seperation)^-1", dpi=300, transparent=False)
+    plt.close()
     return
 
 def main():
@@ -135,13 +84,13 @@ def main():
 
     for data in all_data_1:
         if len(data[1]) > 0:
-            averages_1 = np.vstack((averages_1, draw_plot(data[0], data[1], SAVGOL_FILTER_PARAMETERS_1[data[0]], FILENAME_1, SAVE_FOLDER_1, 0.1)))
+            averages_1 = np.vstack((averages_1, draw_plot(data[0], data[1], SAVGOL_FILTER_PARAMETERS_1[data[0]], FILENAME_1, SAVE_FOLDER_1, PEAK_PROMINENCE["Rising"])))
         else:
             print("No (valid) files provided, ending program")
     
     for data in all_data_2:
         if len(data[1]) > 0:
-            averages_2 = np.vstack((averages_2, draw_plot(data[0], data[1], SAVGOL_FILTER_PARAMETERS_2[data[0]], FILENAME_2, SAVE_FOLDER_2, 0.02)))
+            averages_2 = np.vstack((averages_2, draw_plot(data[0], data[1], SAVGOL_FILTER_PARAMETERS_2[data[0]], FILENAME_2, SAVE_FOLDER_2, PEAK_PROMINENCE["Decreasing"])))
         else:
             print("No (valid) files provided, ending program")
     
