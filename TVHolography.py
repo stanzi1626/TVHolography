@@ -11,18 +11,22 @@ import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter
 from scipy.signal import find_peaks as fp
 
-FILENAME = '/Users/alexstansfield/Desktop/Lab Images/04-09-22 First run Decreasing/Values/'
+FILENAME = "2022_10_04 Second Run/Rising/"
 TITLE = 'BLEH2'
-SAVE_NAME = ''
-X_VARIABLE = 'Distance (Pixels)'
+SAVE_FOLDER = "2022_10_04 Second Run/Rising/Values/"
+X_VARIABLE = "Voltage"
 Y_VARIABLE = 'Gray Value (Intensity)'
 
-SAVGOL_FILTER_PARAMETERS = {"15": 101,
+SAVGOL_FILTER_PARAMETERS = {"00": 201,
+                            "05": 151,
+                            "10": 131,
+                            "15": 101,
                             "20": 81,
                             "25": 71,
                             "30": 61,
                             "35": 51,
                             "40": 41,
+                            "45": 41,
                             "50": 31,
                             "55": 21,
                             "60": 11,
@@ -59,7 +63,7 @@ def draw_plot(title, data, savgol_parameter):
     fig, axs = plt.subplots(1, 2)
     fig.set_size_inches(15, 6)
 
-    axs[0].set_xlabel(X_VARIABLE, fontsize=14, fontfamily='times new roman')
+    axs[0].set_xlabel("Distance (Pixels)", fontsize=14, fontfamily='times new roman')
     axs[0].set_ylabel(Y_VARIABLE, fontsize=14, fontfamily='times new roman')
     axs[0].set_title(title + "V", fontsize=18, fontfamily='times new roman')
     axs[1].set_title(title + 'V filtered with peaks', fontsize=18, fontfamily='times new roman')
@@ -72,8 +76,9 @@ def draw_plot(title, data, savgol_parameter):
 
     peak_diff = np.diff(filtered_peaks)
 
-    print(peak_diff)
-    print(np.average(peak_diff))
+    # print(peak_diff)
+    # print(np.average(peak_diff))
+    # print(np.std(peak_diff) / np.sqrt(len(peak_diff)))
 
     axs[0].grid()
     axs[1].grid()
@@ -82,14 +87,13 @@ def draw_plot(title, data, savgol_parameter):
     axs[1].set_xlim((np.min(data[:, 0]), np.max(data[:, 0])))
 
     plt.tight_layout()
-    plt.savefig(title, dpi=300, transparent=False)
-    # plt.show()
+    plt.savefig(SAVE_FOLDER + title, dpi=300, transparent=False)
 
-    return np.array((int(title), np.average(peak_diff)))
+    return np.array((int(title), np.average(peak_diff), np.std(peak_diff) / np.sqrt(len(peak_diff))))
 
 def find_peaks(data, savgol_parameter):
     w = savgol_filter(data[:, 1], savgol_parameter, 2)
-    peaks, _ = fp(w, prominence=0.1)
+    peaks, _ = fp(w, prominence=0.1) #0.02 for 2nd run decreasing 
     return peaks, w
 
 def filter_peaks(peaks, values):
@@ -101,17 +105,17 @@ def plot_averages(data):
 
     axs.set_xlabel("Voltage", fontsize=14, fontfamily='times new roman')
     axs.set_ylabel("1 / Fringe seperation in pixels", fontsize=14, fontfamily='times new roman')
-    axs.set_title("voltage against average fringe seperation", fontsize=18, fontfamily='times new roman')
+    axs.set_title("Voltage against (1 / average fringe seperation)", fontsize=18, fontfamily='times new roman')
 
-    axs.scatter(data[:, 0], 1 / data[:, 1])
+    axs.errorbar(data[:, 0], 1 / data[:, 1], yerr = (1 / data[:, 1]**2) * data[:, 2], fmt = 'kx')
 
     plt.tight_layout()
-    plt.savefig("voltage against average fringe seperation", dpi=300, transparent=False)
+    plt.savefig(SAVE_FOLDER + "Voltage against (average fringe seperation)^-1", dpi=300, transparent=False)
     return
 
 def main():
     all_data = read_data(FILENAME)
-    averages = np.empty((0, 2))
+    averages = np.empty((0, 3))
 
     for data in all_data:
         if len(data[1]) > 0:
