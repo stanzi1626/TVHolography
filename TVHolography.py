@@ -5,9 +5,11 @@ Created on Fri Feb 11 12:42:47 2022
 @author: Ryand Yandoc and Alexander Stansfield
 """
 
+from turtle import color
 import numpy as np
 import glob
 import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
 from scipy.signal import savgol_filter
 from scipy.signal import find_peaks as fp
 
@@ -19,7 +21,7 @@ SAVE_FOLDER_1 = "2022_10_04 Second Run/Rising/Results/"
 SAVE_FOLDER_2 = "2022_10_04 Second Run/Decreasing/Results/"
 SAVE_FOLDER_AVERAGES = "2022_10_04 Second Run/Comparison/"
 X_VARIABLE = "Voltage"
-Y_VARIABLE = 'Gray Value (Intensity)'                          
+Y_VARIABLE = 'Grey Value (Intensity)'                          
 
 def read_data(file_name):
 
@@ -76,8 +78,9 @@ def draw_plot(title, data, savgol_parameter, filename, save_folder, peak_promine
 
     plt.tight_layout()
     # plt.savefig(save_folder + title, dpi=300, transparent=False)
+    plt.close()
 
-    return np.array((int(title), np.average(peak_diff), np.std(peak_diff) / np.sqrt(len(peak_diff))))
+    return np.array((int(title), 1 / np.average(peak_diff), (1 / (np.average(peak_diff) ** 2)) * np.std(peak_diff) / np.sqrt(len(peak_diff))))
 
 def find_peaks(data, savgol_parameter, peak_prominence):
     w = savgol_filter(data[:, 1], savgol_parameter, 2)
@@ -87,6 +90,20 @@ def find_peaks(data, savgol_parameter, peak_prominence):
 def filter_peaks(peaks, values):
     return peaks[np.where(values[peaks] > 0.5)]
 
+def linear_function(x, m, c):
+    return m*x + c
+
+def find_linear_parameters(data):
+    try:
+        expected, uncertainty = curve_fit(linear_function,\
+                                data[:, 0], data[:, 1], sigma = data[:, 2]) #
+    except RuntimeError:
+        print('Scipy.optimize.curve_fit was not able to find the best'
+              ' parameters, please run code again and input different'
+              ' starting guesses')
+
+    return expected[0], expected[1], np.sqrt(uncertainty[0, 0]), np.sqrt(uncertainty[1, 1])
+
 def plot_averages(data_1, data_2, save_folder):
     fig, axs = plt.subplots(1, 1)
     fig.set_size_inches(15, 6)
@@ -95,8 +112,14 @@ def plot_averages(data_1, data_2, save_folder):
     axs.set_ylabel("1 / Fringe seperation in pixels", fontsize=14, fontfamily='times new roman')
     axs.set_title(FILENAME_1[: -1] + " and " + FILENAME_2[: -1], fontsize=18, fontfamily='times new roman')
 
-    axs.errorbar(data_1[:, 0], 1 / data_1[:, 1], yerr = (1 / data_1[:, 1]**2) * data_1[:, 2], fmt = 'kx')
-    axs.errorbar(data_2[:, 0], 1 / data_2[:, 1], yerr = (1 / data_2[:, 1]**2) * data_2[:, 2], fmt = 'rx')
+    axs.errorbar(data_1[:, 0], data_1[:, 1], yerr = data_1[:, 2], fmt = 'kx')
+    axs.errorbar(data_2[:, 0], data_2[:, 1], yerr = data_2[:, 2], fmt = 'rx')
+
+    m_1, c_1, sigma_m_1, sigma_c_1 = find_linear_parameters(data_1)
+    m_2, c_2, sigma_m_2, sigma_c_2 = find_linear_parameters(data_2)
+
+    plt.plot(np.linspace(0, 55), m_1*np.linspace(0, 55) + c_1, color = 'black')
+    plt.plot(np.linspace(0, 55), m_2*np.linspace(0, 55) + c_2, color = 'red')
 
     axs.grid()
 
@@ -122,6 +145,6 @@ def main():
         else:
             print("No (valid) files provided, ending program")
     
-    plot_averages(averages_1, averages_2, SAVE_FOLDER_AVERAGES)
+    plot_averages(np.sort(averages_1, axis = 0)[2:-2], np.sort(averages_2, axis=0)[2:-2], SAVE_FOLDER_AVERAGES)
 
 main()
