@@ -3,6 +3,9 @@ import glob
 from scipy.optimize import curve_fit
 from scipy.signal import savgol_filter
 from scipy.signal import find_peaks as fp
+from scipy.ndimage import gaussian_filter
+
+FILTER_TYPE = 0 # 0 = gaussian convolution, 1 = savgol filter
 
 
 def read_data(file_name):
@@ -33,9 +36,12 @@ def read_data(file_name):
 
 
 def find_peaks(data, savgol_parameter, peak_prominence):
-    w = savgol_filter(data[:, 1], savgol_parameter, 2)
-    peaks, _ = fp(w, prominence=peak_prominence)
-    return peaks, w
+    if FILTER_TYPE==0:
+        filtered_data=gaussian_smooth_filter(data[:, 1], sigma=5)
+    elif FILTER_TYPE==1:
+        filtered_data = savgol_filter(data[:, 1], savgol_parameter, 2)
+    peaks, _ = fp(filtered_data, prominence=peak_prominence)
+    return peaks, filtered_data
 
 
 def filter_peaks(peaks, values):
@@ -58,3 +64,7 @@ def find_linear_parameters(data):
 
     return expected[0], expected[1],\
            np.sqrt(uncertainty[0, 0]), np.sqrt(uncertainty[1, 1])
+
+
+def gaussian_smooth_filter(y_data, sigma):
+    return gaussian_filter(y_data, sigma)
