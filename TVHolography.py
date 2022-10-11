@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 from Parameters import SAVGOL_FILTER_PARAMETERS_1,\
         SAVGOL_FILTER_PARAMETERS_2, PEAK_PROMINENCE
 from Functions import read_data, find_peaks,\
-        filter_peaks, find_linear_parameters
+        filter_peaks, find_linear_parameters,\
+        fit_gaussian
 from scipy.optimize import curve_fit
 
 FILENAME_1 = "2022_10_04 Second Run/Rising/Data/"
@@ -33,8 +34,6 @@ def draw_plot(title, data, savgol_parameter, filename,
     axs.set_ylabel(Y_VARIABLE, fontsize=14, fontfamily='times new roman')
     axs.set_title(filename[: -1] + "-" + title + "V", fontsize=18,
                      fontfamily='times new roman')
-    # axs[1].set_title(title + 'V filtered with peaks', fontsize=18,
-    #                  fontfamily='times new roman')
 
     axs.plot(data[:, 0], data[:, 1], 'k')
     peaks, filtered_data = find_peaks(data, savgol_parameter, peak_prominence)
@@ -49,7 +48,9 @@ def draw_plot(title, data, savgol_parameter, filename,
     axs.scatter(filtered_peaks, filtered_data[filtered_peaks], c='b', s=50)
     axs.scatter(filtered_troughs, filtered_data[filtered_troughs], c='b', s=50)
 
-    fit_gaussian(filtered_peaks, filtered_data[filtered_peaks], axs)
+    if len(filtered_peaks) > 3 or len(filtered_troughs) > 3:
+        fit_gaussian(filtered_peaks, filtered_data[filtered_peaks], axs)
+        fit_gaussian(filtered_troughs, filtered_data[filtered_troughs], axs)
 
     peak_diff = np.diff(filtered_peaks)
 
@@ -58,34 +59,17 @@ def draw_plot(title, data, savgol_parameter, filename,
     # print(np.std(peak_diff) / np.sqrt(len(peak_diff)))
 
     axs.grid()
-    # axs[1].grid()
 
     axs.set_xlim((np.min(data[:, 0]), np.max(data[:, 0])))
-    # axs[1].set_xlim((np.min(data[:, 0]), np.max(data[:, 0])))
 
     plt.tight_layout()
-    # plt.savefig(save_folder + title, dpi=300, transparent=False)
-    plt.show()
+    plt.savefig(save_folder + title, dpi=300, transparent=False)
+    plt.close()
+    # plt.show()
 
     return np.array((int(title), 1 / np.average(peak_diff),
                     (1 / (np.average(peak_diff) ** 2))
                     * np.std(peak_diff) / np.sqrt(len(peak_diff))))
-
-def fit_gaussian(x_data, y_data, axis):
-    print(x_data)
-    print(y_data)
-    mu_guess = np.average(x_data)
-    std_guess = 1000
-    param, _ = curve_fit(gaussian_curve, x_data, y_data,
-                         p0=[std_guess, mu_guess], maxfev=5000)
-    # uncertainty = np.sqrt(np.diagonal(cov))
-
-    axis.plot(x_data, gaussian_curve(x_data, *param), 'b--')
-
-def gaussian_curve(x_data, sigma, mu):
-    norm = 1 / (sigma * np.sqrt(2 * np.pi))
-    exponent = -0.5 * ((x_data - mu) / sigma) ** 2
-    return norm * np.exp(exponent)
 
 def plot_averages(data_1, data_2, save_folder):
     fig, axs = plt.subplots(1, 1)
@@ -142,7 +126,7 @@ def main():
     averages_1 = np.empty((0, 3))
     averages_2 = np.empty((0, 3))
 
-    for data in all_data_1[2:3]:
+    for data in all_data_1:
         if len(data[1]) > 0:
             averages_1 = np.vstack((averages_1, draw_plot(data[0], data[1],
                                     SAVGOL_FILTER_PARAMETERS_1[data[0]],
@@ -151,17 +135,17 @@ def main():
         else:
             print("No (valid) files provided, ending program")
 
-    # for data in all_data_2:
-    #     if len(data[1]) > 0:
-    #         averages_2 = np.vstack((averages_2, draw_plot(data[0], data[1],
-    #                                 SAVGOL_FILTER_PARAMETERS_2[data[0]],
-    #                                 FILENAME_2, SAVE_FOLDER_2,
-    #                                 PEAK_PROMINENCE["Decreasing"])))
-    #     else:
-    #         print("No (valid) files provided, ending program")
+    for data in all_data_2:
+        if len(data[1]) > 0:
+            averages_2 = np.vstack((averages_2, draw_plot(data[0], data[1],
+                                    SAVGOL_FILTER_PARAMETERS_2[data[0]],
+                                    FILENAME_2, SAVE_FOLDER_2,
+                                    PEAK_PROMINENCE["Decreasing"])))
+        else:
+            print("No (valid) files provided, ending program")
 
-    # plot_averages(np.sort(averages_1, axis=0),
-    #               np.sort(averages_2, axis=0), SAVE_FOLDER_AVERAGES)
+    plot_averages(np.sort(averages_1, axis=0),
+                  np.sort(averages_2, axis=0), SAVE_FOLDER_AVERAGES)
 
 
 main()
