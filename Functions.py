@@ -5,7 +5,7 @@ from scipy.signal import savgol_filter
 from scipy.signal import find_peaks as fp
 from scipy.ndimage import gaussian_filter
 
-FILTER_TYPE = 0 # 0 = gaussian convolution, 1 = savgol filter
+FILTER_TYPE = 1 # 0 = gaussian convolution, 1 = savgol filter
 
 
 def read_data(file_name):
@@ -44,8 +44,8 @@ def find_peaks(data, savgol_parameter, peak_prominence):
     return peaks, filtered_data
 
 
-def filter_peaks(peaks, values):
-    return peaks[np.where(values[peaks] > 0.5)]
+def filter_peaks(peaks, values, limit):
+    return peaks[np.where(values[peaks] > limit)]
 
 
 def linear_function(x, m, c):
@@ -68,3 +68,19 @@ def find_linear_parameters(data):
 
 def gaussian_smooth_filter(y_data, sigma):
     return gaussian_filter(y_data, sigma)
+
+
+def fit_gaussian(x_data, y_data, axis):
+    mu_guess = np.average(x_data)
+    std_guess = 100
+    param, _ = curve_fit(gaussian_curve, x_data, y_data,
+                         p0=[1.5, std_guess, mu_guess])
+    # uncertainty = np.sqrt(np.diagonal(cov))
+
+    axis.plot(np.linspace(np.min(x_data), np.max(x_data)),
+              gaussian_curve(np.linspace(np.min(x_data), np.max(x_data)), *param), 'g--')
+    return
+
+def gaussian_curve(x_data, A, sigma, mu):
+    exponent = - (x_data - mu) ** 2 / (2 * sigma ** 2)
+    return A * np.exp(exponent)

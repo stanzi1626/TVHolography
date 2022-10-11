@@ -11,7 +11,9 @@ import matplotlib.pyplot as plt
 from Parameters import SAVGOL_FILTER_PARAMETERS_1,\
         SAVGOL_FILTER_PARAMETERS_2, PEAK_PROMINENCE
 from Functions import read_data, find_peaks,\
-        filter_peaks, find_linear_parameters
+        filter_peaks, find_linear_parameters,\
+        fit_gaussian
+from scipy.optimize import curve_fit
 
 FILENAME_1 = "2022_10_04 Second Run/Rising/Data/"
 FILENAME_2 = "2022_10_04 Second Run/Decreasing/Data/"
@@ -57,14 +59,23 @@ def draw_plot(title, data, savgol_parameter, filename,
     axs.set_ylabel(Y_VARIABLE, fontsize=14, fontfamily='times new roman')
     axs.set_title(filename[: -1] + "-" + title + "V", fontsize=18,
                      fontfamily='times new roman')
-    # axs[1].set_title(title + 'V filtered with peaks', fontsize=18,
-    #                  fontfamily='times new roman')
-    
-    axs.plot(data[:, 0], data[:, 1], 'k--')
+
+    axs.plot(data[:, 0], data[:, 1], 'k')
     peaks, filtered_data = find_peaks(data, savgol_parameter, peak_prominence)
-    filtered_peaks = filter_peaks(peaks, filtered_data)
-    axs.plot(data[:, 0], filtered_data, 'r')
-    axs.scatter(filtered_peaks, filtered_data[filtered_peaks])
+    flipped_data = data
+    flipped_data[:, 1] = -data[:, 1]
+    troughs, _ = find_peaks(flipped_data, savgol_parameter, peak_prominence)
+    filtered_peaks = filter_peaks(peaks, filtered_data, 0.5)
+    filtered_troughs = filter_peaks(troughs, filtered_data, 0.3)
+
+    axs.plot(data[:, 0], filtered_data, 'r--')
+
+    axs.scatter(filtered_peaks, filtered_data[filtered_peaks], c='b', s=50)
+    axs.scatter(filtered_troughs, filtered_data[filtered_troughs], c='b', s=50)
+
+    if len(filtered_peaks) > 3 or len(filtered_troughs) > 3:
+        fit_gaussian(filtered_peaks, filtered_data[filtered_peaks], axs)
+        fit_gaussian(filtered_troughs, filtered_data[filtered_troughs], axs)
 
     peak_diff = np.diff(filtered_peaks)
 
@@ -75,19 +86,17 @@ def draw_plot(title, data, savgol_parameter, filename,
     # print(np.std(peak_diff) / np.sqrt(len(peak_diff)))
 
     axs.grid()
-    # axs[1].grid()
 
     axs.set_xlim((np.min(data[:, 0]), np.max(data[:, 0])))
-    # axs[1].set_xlim((np.min(data[:, 0]), np.max(data[:, 0])))
 
     plt.tight_layout()
     plt.savefig(save_folder + title, dpi=300, transparent=False)
     plt.close()
+    # plt.show()
 
     return np.array((int(title), 1 / np.average(peak_diff),
                     (1 / (np.average(peak_diff) ** 2))
                     * np.std(peak_diff) / np.sqrt(len(peak_diff))))
-
 
 def plot_averages(data_1, data_2, save_folder):
     fig, axs = plt.subplots(1, 1)
