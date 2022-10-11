@@ -48,6 +48,7 @@ def draw_plot(title, data, savgol_parameter, filename,
               save_folder, peak_prominence):
     print("{0} V with default savgol param: {1}".format(title,
                                                         savgol_parameter))
+
     fig, axs = plt.subplots(1, 1)
     fig.set_size_inches(15, 6)
 
@@ -58,12 +59,12 @@ def draw_plot(title, data, savgol_parameter, filename,
                      fontfamily='times new roman')
     # axs[1].set_title(title + 'V filtered with peaks', fontsize=18,
     #                  fontfamily='times new roman')
-
-    axs.plot(data[:, 0], data[:, 1], 'k')
-    peaks, w = find_peaks(data, savgol_parameter, peak_prominence)
-    filtered_peaks = filter_peaks(peaks, w)
-
-    axs.scatter(filtered_peaks, w[filtered_peaks])
+    
+    axs.plot(data[:, 0], data[:, 1], 'k--')
+    peaks, filtered_data = find_peaks(data, savgol_parameter, peak_prominence)
+    filtered_peaks = filter_peaks(peaks, filtered_data)
+    axs.plot(data[:, 0], filtered_data, 'r')
+    axs.scatter(filtered_peaks, filtered_data[filtered_peaks])
 
     peak_diff = np.diff(filtered_peaks)
 
@@ -80,8 +81,8 @@ def draw_plot(title, data, savgol_parameter, filename,
     # axs[1].set_xlim((np.min(data[:, 0]), np.max(data[:, 0])))
 
     plt.tight_layout()
-    # plt.savefig(save_folder + title, dpi=300, transparent=False)
-    plt.show()
+    plt.savefig(save_folder + title, dpi=300, transparent=False)
+    plt.close()
 
     return np.array((int(title), 1 / np.average(peak_diff),
                     (1 / (np.average(peak_diff) ** 2))
