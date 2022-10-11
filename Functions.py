@@ -56,5 +56,5 @@ def find_linear_parameters(data):
               ' parameters, please run code again and input different'
               ' starting guesses')
 
-    return expected[0], expected[1], np.sqrt(uncertainty[0, 0])
-    np.sqrt(uncertainty[1, 1])
+    return expected[0], expected[1],\
+           np.sqrt(uncertainty[0, 0]), np.sqrt(uncertainty[1, 1])

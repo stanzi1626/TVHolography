@@ -72,16 +72,37 @@ def plot_averages(data_1, data_2, save_folder):
     axs.set_title(FILENAME_1[: -1] + " and " + FILENAME_2[: -1],
                   fontsize=18, fontfamily='times new roman')
 
-    axs.errorbar(data_1[:, 0], data_1[:, 1], yerr=data_1[:, 2], fmt='kx')
-    axs.errorbar(data_2[:, 0], data_2[:, 1], yerr=data_2[:, 2], fmt='rx')
+    # Non fitted data points
+    axs.errorbar(np.hstack((data_1[:, 0][:2], data_1[:, 0][-2:])),
+                 np.hstack((data_1[:, 1][:2], data_1[:, 1][-2:])),
+                 yerr=np.hstack((data_1[:, 2][:2], data_1[:, 2][-2:])),
+                 fmt='kx')
+    axs.errorbar(np.hstack((data_2[:, 0][:2], data_2[:, 0][-2:])),
+                 np.hstack((data_2[:, 1][:2], data_2[:, 1][-2:])),
+                 yerr=np.hstack((data_2[:, 2][:2], data_2[:, 2][-2:])),
+                 fmt='kx')
+    # fitted data points [2:-2]
+    axs.errorbar(data_1[:, 0][2:-2], data_1[:, 1][2:-2],
+                 yerr=data_1[:, 2][2:-2], fmt='bx')
+    axs.errorbar(data_2[:, 0][2:-2], data_2[:, 1][2:-2],
+                 yerr=data_2[:, 2][2:-2], fmt='rx')
 
-    m_1, c_1, sigma_m_1, sigma_c_1 = find_linear_parameters(data_1)
-    m_2, c_2, sigma_m_2, sigma_c_2 = find_linear_parameters(data_2)
+    m_1, c_1, sigma_m_1, sigma_c_1 = find_linear_parameters(data_1[2:-2])
+    m_2, c_2, sigma_m_2, sigma_c_2 = find_linear_parameters(data_2[2:-2])
 
-    plt.plot(np.linspace(0, 55), m_1*np.linspace(0, 55) + c_1, color='black')
-    plt.plot(np.linspace(0, 55), m_2*np.linspace(0, 55) + c_2, color='red')
+    plt.plot(np.linspace(0, 55), m_1*np.linspace(0, 55) + c_1, color='blue',
+             label="Rising voltage: y =({0:.3g} $\pm$ {1:.3g})x"\
+                   .format(m_1, sigma_m_1)
+                   +" + {0:.1g} $\pm$ {1:.1g}"\
+                   .format(c_1, sigma_c_1))
+    plt.plot(np.linspace(0, 55), m_2*np.linspace(0, 55) + c_2, color='red',
+             label="Decreasing voltage: y =({0:.3g} $\pm$ {1:.1g})x"\
+                    .format(m_2, sigma_m_2)
+                    +" + {0:.3g} $\pm$ {1:.1g}"\
+                    .format(c_2, sigma_c_2))
 
     axs.grid()
+    plt.legend()
 
     plt.tight_layout()
     plt.savefig(save_folder + "Voltage against (average fringe seperation)^-1",
@@ -114,8 +135,8 @@ def main():
         else:
             print("No (valid) files provided, ending program")
 
-    plot_averages(np.sort(averages_1, axis=0)[2:-2],
-                  np.sort(averages_2, axis=0)[2:-2], SAVE_FOLDER_AVERAGES)
+    plot_averages(np.sort(averages_1, axis=0),
+                  np.sort(averages_2, axis=0), SAVE_FOLDER_AVERAGES)
 
 
 main()
