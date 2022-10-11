@@ -5,7 +5,7 @@ from scipy.signal import savgol_filter
 from scipy.signal import find_peaks as fp
 from scipy.ndimage import gaussian_filter
 
-FILTER_TYPE = 0 # 0 = gaussian convolution, 1 = savgol filter
+FILTER_TYPE = 1 # 0 = gaussian convolution, 1 = savgol filter
 
 
 def read_data(file_name):
@@ -44,8 +44,8 @@ def find_peaks(data, savgol_parameter, peak_prominence):
     return peaks, filtered_data
 
 
-def filter_peaks(peaks, values):
-    return peaks[np.where(values[peaks] > 0.5)]
+def filter_peaks(peaks, values, limit):
+    return peaks[np.where(values[peaks] > limit)]
 
 
 def linear_function(x, m, c):
