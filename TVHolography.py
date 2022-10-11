@@ -24,22 +24,22 @@ Y_VARIABLE = 'Grey Value (Intensity)'
 
 def draw_plot(title, data, savgol_parameter, filename,
               save_folder, peak_prominence):
-    fig, axs = plt.subplots(1, 2)
+    fig, axs = plt.subplots(1, 1)
     fig.set_size_inches(15, 6)
 
-    axs[0].set_xlabel("Distance (Pixels)", fontsize=14,
+    axs.set_xlabel("Distance (Pixels)", fontsize=14,
                       fontfamily='times new roman')
-    axs[0].set_ylabel(Y_VARIABLE, fontsize=14, fontfamily='times new roman')
-    axs[0].set_title(filename[: -1] + "-" + title + "V", fontsize=18,
+    axs.set_ylabel(Y_VARIABLE, fontsize=14, fontfamily='times new roman')
+    axs.set_title(filename[: -1] + "-" + title + "V", fontsize=18,
                      fontfamily='times new roman')
-    axs[1].set_title(title + 'V filtered with peaks', fontsize=18,
-                     fontfamily='times new roman')
+    # axs[1].set_title(title + 'V filtered with peaks', fontsize=18,
+    #                  fontfamily='times new roman')
 
-    axs[0].plot(data[:, 0], data[:, 1], 'k')
-    peaks, w = find_peaks(data, savgol_parameter, peak_prominence)
-    filtered_peaks = filter_peaks(peaks, w)
-    axs[1].plot(data[:, 0], w, 'k')
-    axs[1].scatter(filtered_peaks, w[filtered_peaks])
+    axs.plot(data[:, 0], data[:, 1], 'k--')
+    peaks, filtered_data = find_peaks(data, savgol_parameter, peak_prominence)
+    filtered_peaks = filter_peaks(peaks, filtered_data)
+    axs.plot(data[:, 0], filtered_data, 'r')
+    axs.scatter(filtered_peaks, filtered_data[filtered_peaks])
 
     peak_diff = np.diff(filtered_peaks)
 
@@ -47,14 +47,14 @@ def draw_plot(title, data, savgol_parameter, filename,
     # print(np.average(peak_diff))
     # print(np.std(peak_diff) / np.sqrt(len(peak_diff)))
 
-    axs[0].grid()
-    axs[1].grid()
+    axs.grid()
+    # axs[1].grid()
 
-    axs[0].set_xlim((np.min(data[:, 0]), np.max(data[:, 0])))
-    axs[1].set_xlim((np.min(data[:, 0]), np.max(data[:, 0])))
+    axs.set_xlim((np.min(data[:, 0]), np.max(data[:, 0])))
+    # axs[1].set_xlim((np.min(data[:, 0]), np.max(data[:, 0])))
 
     plt.tight_layout()
-    # plt.savefig(save_folder + title, dpi=300, transparent=False)
+    plt.savefig(save_folder + title, dpi=300, transparent=False)
     plt.close()
 
     return np.array((int(title), 1 / np.average(peak_diff),
