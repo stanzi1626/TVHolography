@@ -7,12 +7,13 @@ Created on Fri Feb 11 12:42:47 2022
 
 import numpy as np
 import matplotlib.pyplot as plt
+import copy
 
 from Parameters import SAVGOL_FILTER_PARAMETERS_1,\
         SAVGOL_FILTER_PARAMETERS_2, PEAK_PROMINENCE
 from Functions import read_data, find_peaks,\
         filter_peaks, find_linear_parameters,\
-        fit_gaussian
+        fit_gaussian, optimize_savgol
 from scipy.optimize import curve_fit
 
 FILENAME_1 = "2022_10_04 Second Run/Rising/Data/"
@@ -22,29 +23,6 @@ SAVE_FOLDER_2 = "2022_10_04 Second Run/Decreasing/Results/"
 SAVE_FOLDER_AVERAGES = "2022_10_04 Second Run/Comparison/"
 X_VARIABLE = "Voltage"
 Y_VARIABLE = 'Grey Value (Intensity)'
-
-
-def red_chi_square(data, smoothed_y):
-    chi_square_total = np.sum(((data[:, 1] - smoothed_y)**2) / data[:, 1])
-
-    return chi_square_total / len(data)
-
-def optimize_savgol(data, savgol_0, peak_prominence, axs):
-    chi_lis = np.array([])
-    for svg in range(11, savgol_0*10, 10):
-        # print(svg)
-        svg = 151
-        peaks, w = find_peaks(data, svg, peak_prominence)
-        chi_lis = np.append(chi_lis, red_chi_square(data, w))
-        axs.plot(data[:, 0], w)
-
-
-    print(chi_lis)
-    band = 0.5
-    best_chi_pos = np.where(np.logical_and(1-band < chi_lis,chi_lis < 1+band))
-    best_chi = chi_lis[best_chi_pos]
-
-    return best_chi
 
 def draw_plot(title, data, savgol_parameter, filename,
               save_folder, peak_prominence):
@@ -62,8 +40,8 @@ def draw_plot(title, data, savgol_parameter, filename,
 
     axs.plot(data[:, 0], data[:, 1], 'k')
     peaks, filtered_data = find_peaks(data, savgol_parameter, peak_prominence)
-    flipped_data = data
-    flipped_data[:, 1] = -data[:, 1]
+    flipped_data = copy.deepcopy(data)
+    flipped_data[:, 1] = -flipped_data[:, 1] 
     troughs, _ = find_peaks(flipped_data, savgol_parameter, peak_prominence)
     filtered_peaks = filter_peaks(peaks, filtered_data, 0.5)
     filtered_troughs = filter_peaks(troughs, filtered_data, 0.3)
@@ -154,7 +132,7 @@ def main():
     averages_1 = np.empty((0, 3))
     averages_2 = np.empty((0, 3))
 
-    for data in all_data_1[:1]:
+    for data in all_data_1:
         if len(data[1]) > 0:
             averages_1 = np.vstack((averages_1, draw_plot(data[0], data[1],
                                     SAVGOL_FILTER_PARAMETERS_1[data[0]],
@@ -163,7 +141,7 @@ def main():
         else:
             print("No (valid) files provided, ending program")
 
-    for data in all_data_2[:1]:
+    for data in all_data_2:
         if len(data[1]) > 0:
             averages_2 = np.vstack((averages_2, draw_plot(data[0], data[1],
                                     SAVGOL_FILTER_PARAMETERS_2[data[0]],
