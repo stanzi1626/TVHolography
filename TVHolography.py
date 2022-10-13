@@ -98,6 +98,7 @@ def draw_plot(title, data, savgol_parameter, filename,
                     (1 / (np.average(peak_diff) ** 2))
                     * np.std(peak_diff) / np.sqrt(len(peak_diff))))
 
+
 def plot_averages(data_1, data_2, save_folder):
     fig, axs = plt.subplots(1, 1)
     fig.set_size_inches(15, 6)
@@ -149,9 +150,9 @@ def plot_averages(data_1, data_2, save_folder):
 
 def main():
     all_data_1 = read_data(FILENAME_1)
-    # all_data_2 = read_data(FILENAME_2)
+    all_data_2 = read_data(FILENAME_2)
     averages_1 = np.empty((0, 3))
-    # averages_2 = np.empty((0, 3))
+    averages_2 = np.empty((0, 3))
 
     for data in all_data_1[:1]:
         if len(data[1]) > 0:
@@ -162,17 +163,17 @@ def main():
         else:
             print("No (valid) files provided, ending program")
 
-    # for data in all_data_2:
-    #     if len(data[1]) > 0:
-    #         averages_2 = np.vstack((averages_2, draw_plot(data[0], data[1],
-    #                                 SAVGOL_FILTER_PARAMETERS_2[data[0]],
-    #                                 FILENAME_2, SAVE_FOLDER_2,
-    #                                 PEAK_PROMINENCE["Decreasing"])))
-    #     else:
-    #         print("No (valid) files provided, ending program")
+    for data in all_data_2[:1]:
+        if len(data[1]) > 0:
+            averages_2 = np.vstack((averages_2, draw_plot(data[0], data[1],
+                                    SAVGOL_FILTER_PARAMETERS_2[data[0]],
+                                    FILENAME_2, SAVE_FOLDER_2,
+                                    PEAK_PROMINENCE["Decreasing"])))
+        else:
+            print("No (valid) files provided, ending program")
 
-    # plot_averages(np.sort(averages_1, axis=0),
-    #               np.sort(averages_2, axis=0), SAVE_FOLDER_AVERAGES)
+    plot_averages(np.sort(averages_1, axis=0),
+                  np.sort(averages_2, axis=0), SAVE_FOLDER_AVERAGES)
 
 
 main()
