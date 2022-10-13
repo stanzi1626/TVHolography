@@ -81,6 +81,60 @@ def fit_gaussian(x_data, y_data, axis):
               gaussian_curve(np.linspace(np.min(x_data), np.max(x_data)), *param), 'g--')
     return
 
+
 def gaussian_curve(x_data, A, sigma, mu):
     exponent = - (x_data - mu) ** 2 / (2 * sigma ** 2)
     return A * np.exp(exponent)
+
+
+
+def red_chi_square(data, smoothed_y):
+    chi_square_total = np.sum(((data - smoothed_y)**2) / data)
+
+    return chi_square_total / len(data)
+
+
+def find_closest(dataset, target, amount=1):
+    diff_dict = {}
+    diff = np.abs(target - dataset)
+    min_val_pos = np.array([])
+    
+    for index, val in enumerate(diff):
+        diff_dict[val] = index
+        
+    diff_sort = dict(sorted(diff_dict.items()))
+    
+    for item in diff_sort:
+        min_val_pos = np.append(min_val_pos, diff_sort[item])
+        
+    return (np.take(dataset, min_val_pos[:amount].astype(int)), 
+            min_val_pos[:amount])
+
+
+def find_nearest(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return array[idx]
+    
+
+def optimize_savgol(data, savgol_0, peak_prominence, axs):
+    chi_lis = np.array([])
+    #abs_list = np.array([])
+    range_values = range(5, 351, 2)
+    for svg in range_values:
+        peaks, w = find_peaks(data, svg, peak_prominence)
+        chi_lis = np.append(chi_lis, red_chi_square(data[:, 1], w))
+        # abs_list = np.append(abs_list, np.sum(np.abs(data[:, 1] - w)))
+        # axs.plot(data[:, 0], w)
+
+
+    # print(chi_lis)
+    # print(abs_list)
+    closest, closest_index = find_closest(chi_lis, chi_lis[np.where(range_values==find_nearest(range_values, savgol_0))], 5)
+    best_savgol = np.take(range_values, closest_index.astype(int))
+
+    for savgol_param in best_savgol:
+        best_data = savgol_filter(data[:, 1], savgol_param, 2)
+        axs.plot(data[:, 0], best_data)
+
+    return best_savgol

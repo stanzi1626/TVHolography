@@ -13,8 +13,7 @@ from Parameters import SAVGOL_FILTER_PARAMETERS_1,\
         SAVGOL_FILTER_PARAMETERS_2, PEAK_PROMINENCE
 from Functions import read_data, find_peaks,\
         filter_peaks, find_linear_parameters,\
-        fit_gaussian, optimize_savgol
-from scipy.optimize import curve_fit
+        fit_gaussian, optimize_savgol, red_chi_square
 
 FILENAME_1 = "2022_10_04 Second Run/Rising/Data/"
 FILENAME_2 = "2022_10_04 Second Run/Decreasing/Data/"
@@ -24,9 +23,18 @@ SAVE_FOLDER_AVERAGES = "2022_10_04 Second Run/Comparison/"
 X_VARIABLE = "Voltage"
 Y_VARIABLE = 'Grey Value (Intensity)'
 
+def Extract(lst, i):
+    result = []
+    try:
+        for item in lst:
+            result.append(item[i])
+        return result
+    except IndexError:
+        return None
+
 def draw_plot(title, data, savgol_parameter, filename,
-              save_folder, peak_prominence):
-    print("{0} V with default savgol param: {1}".format(title,
+              save_folder, peak_prominence, direction):
+    print("{0} V with default savgol param: {1}".format(title + direction,
                                                         savgol_parameter))
 
     fig, axs = plt.subplots(1, 1)
@@ -39,29 +47,57 @@ def draw_plot(title, data, savgol_parameter, filename,
                      fontfamily='times new roman')
 
     axs.plot(data[:, 0], data[:, 1], 'k')
-    peaks, filtered_data = find_peaks(data, savgol_parameter, peak_prominence)
-    flipped_data = copy.deepcopy(data)
-    flipped_data[:, 1] = -flipped_data[:, 1] 
-    troughs, _ = find_peaks(flipped_data, savgol_parameter, peak_prominence)
-    filtered_peaks = filter_peaks(peaks, filtered_data, 0.5)
-    filtered_troughs = filter_peaks(troughs, filtered_data, 0.3)
+    
 
-    axs.plot(data[:, 0], filtered_data, 'r--')
+    best_savgol_parameters = optimize_savgol(data[750:2250], savgol_parameter, peak_prominence, axs)
+    print(best_savgol_parameters)
 
-    axs.scatter(filtered_peaks, filtered_data[filtered_peaks], c='b', s=50)
-    axs.scatter(filtered_troughs, filtered_data[filtered_troughs], c='b', s=50)
+    total_x_peak_data = []
+    total_y_peak_data = []
 
-    if len(filtered_peaks) > 3 or len(filtered_troughs) > 3:
-        fit_gaussian(filtered_peaks, filtered_data[filtered_peaks], axs)
-        fit_gaussian(filtered_troughs, filtered_data[filtered_troughs], axs)
+    for sav_param in best_savgol_parameters:
+        peaks, filtered_data = find_peaks(data, sav_param, peak_prominence)
+        # flipped_data = copy.deepcopy(data)
+        # flipped_data[:, 1] = -flipped_data[:, 1] 
+        # troughs, _ = find_peaks(flipped_data, sav_param, peak_prominence)
+        filtered_peaks = filter_peaks(peaks, filtered_data, 0.6)
+        total_x_peak_data.append(filtered_peaks)
+        total_y_peak_data.append(filtered_data[filtered_peaks])
+        # filtered_troughs = filter_peaks(troughs, filtered_data, 0.3)
+        # axs.plot(filtered_peaks, filtered_data[filtered_peaks], '.')
+    
+    peak_x_averages = []
+    peak_x_sigmas = []
+    peak_x_range = []
+    peak_y_averages = []
+    peak_y_sigmas = []
+    peak_y_range = []
 
-    peak_diff = np.diff(filtered_peaks)
+    for peak_index in range(0, len(total_x_peak_data[0])):
+        extracted = Extract(total_x_peak_data, peak_index)
+        if extracted != None:
+            peak_x_averages.append(np.mean(extracted))
+            peak_x_sigmas.append(np.std(extracted))
+            peak_x_range.append((np.max(extracted) - np.min(extracted)) / 2)
+    for peak_index in range(0, len(total_y_peak_data[0])):
+        extracted = Extract(total_y_peak_data, peak_index)
+        if extracted != None:
+            peak_y_averages.append(np.mean(extracted))
+            peak_y_sigmas.append(np.std(extracted))
+            peak_y_range.append((np.max(extracted) - np.min(extracted)) / 2)
 
-    print(optimize_savgol(data, savgol_parameter, peak_prominence, axs))
+    axs.errorbar(peak_x_averages, peak_y_averages, xerr = peak_x_range, yerr=peak_y_sigmas, fmt='bx')
 
-    # print(peak_diff)
-    # print(np.average(peak_diff))
-    # print(np.std(peak_diff) / np.sqrt(len(peak_diff)))
+    peak_diffs = np.diff(peak_x_averages)
+
+    # axs.scatter(filtered_peaks, filtered_data[filtered_peaks], c='b', s=50)
+    # axs.scatter(filtered_troughs, filtered_data[filtered_troughs], c='b', s=50)
+
+    # if len(filtered_peaks) > 3 or len(filtered_troughs) > 3:
+    #     fit_gaussian(filtered_peaks, filtered_data[filtered_peaks], axs)
+    #     fit_gaussian(filtered_troughs, filtered_data[filtered_troughs], axs)
+
+    # analysis with different fringe spacings
 
     axs.grid()
 
@@ -72,9 +108,9 @@ def draw_plot(title, data, savgol_parameter, filename,
     plt.close()
     # plt.show()
 
-    return np.array((int(title), 1 / np.average(peak_diff),
-                    (1 / (np.average(peak_diff) ** 2))
-                    * np.std(peak_diff) / np.sqrt(len(peak_diff))))
+    return np.array((int(title), 1 / np.average(peak_diffs),
+                    (1 / (np.average(peak_diffs) ** 2))
+                    * np.std(peak_diffs) / np.sqrt(len(peak_diffs))))
 
 
 def plot_averages(data_1, data_2, save_folder):
@@ -116,6 +152,19 @@ def plot_averages(data_1, data_2, save_folder):
                     +" + {0:.3g} $\pm$ {1:.1g}"\
                     .format(c_2, sigma_c_2))
 
+    rising_data = data_1[:, 1][2:-2]
+    decreasing_data = data_2[:, 1][2:-2]
+    reduced_chi_sqaure_rising = red_chi_square(rising_data,
+                                               m_1*np.linspace(np.min(rising_data),
+                                               np.max(rising_data),
+                                               num=len(rising_data)) + c_1)
+    reduced_chi_sqaure_decreasing = red_chi_square(decreasing_data,
+                                               m_2*np.linspace(np.min(decreasing_data),
+                                               np.max(decreasing_data),
+                                               num=len(decreasing_data)) + c_2)
+    print("The reduced chi-sqaure for rising: {0:.3g}".format(reduced_chi_sqaure_rising))
+    print("The reduced chi-sqaure for decreasing: {0:.3g}".format(reduced_chi_sqaure_decreasing))
+
     axs.grid()
     plt.legend()
 
@@ -137,7 +186,8 @@ def main():
             averages_1 = np.vstack((averages_1, draw_plot(data[0], data[1],
                                     SAVGOL_FILTER_PARAMETERS_1[data[0]],
                                     FILENAME_1,
-                                    SAVE_FOLDER_1, PEAK_PROMINENCE["Rising"])))
+                                    SAVE_FOLDER_1, PEAK_PROMINENCE["Rising"],
+                                    "Rising")))
         else:
             print("No (valid) files provided, ending program")
 
@@ -146,7 +196,8 @@ def main():
             averages_2 = np.vstack((averages_2, draw_plot(data[0], data[1],
                                     SAVGOL_FILTER_PARAMETERS_2[data[0]],
                                     FILENAME_2, SAVE_FOLDER_2,
-                                    PEAK_PROMINENCE["Decreasing"])))
+                                    PEAK_PROMINENCE["Decreasing"],
+                                    "Decreasing")))
         else:
             print("No (valid) files provided, ending program")
 
