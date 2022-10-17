@@ -11,7 +11,7 @@ import copy
 
 from Parameters import SAVGOL_FILTER_PARAMETERS_1,\
         SAVGOL_FILTER_PARAMETERS_2, PEAK_PROMINENCE
-from Functions import read_data, find_peaks,\
+from Functions import extract_index, read_data, find_peaks,\
         filter_peaks, find_linear_parameters,\
         fit_gaussian, optimize_savgol, red_chi_square
 
@@ -22,15 +22,6 @@ SAVE_FOLDER_2 = "2022_10_13 Third Run/Values-Filtered/Decreasing/Results/"
 SAVE_FOLDER_AVERAGES = "2022_10_13 Third Run/Values-Filtered/Comparison/"
 X_VARIABLE = "Voltage"
 Y_VARIABLE = 'Grey Value (Intensity)'
-
-def Extract(lst, i):
-    result = []
-    try:
-        for item in lst:
-            result.append(item[i])
-        return result
-    except IndexError:
-        return None
 
 def draw_plot(title, data, savgol_parameter, filename,
               save_folder, peak_prominence, direction):
@@ -49,7 +40,8 @@ def draw_plot(title, data, savgol_parameter, filename,
     axs.plot(data[:, 0], data[:, 1], 'k')
     
 
-    best_savgol_parameters = optimize_savgol(data[1000:2750], savgol_parameter, peak_prominence, axs)
+    best_savgol_parameters = optimize_savgol(data[1000:2750], savgol_parameter,
+                                             peak_prominence, axs)
     print(best_savgol_parameters)
 
     total_x_peak_data = []
@@ -73,18 +65,44 @@ def draw_plot(title, data, savgol_parameter, filename,
     peak_y_sigmas = []
     peak_y_range = []
 
-    for peak_index in range(0, len(total_x_peak_data[0])):
-        extracted = Extract(total_x_peak_data, peak_index)
-        if extracted != None:
-            peak_x_averages.append(np.mean(extracted))
-            peak_x_sigmas.append(np.std(extracted))
-            peak_x_range.append((np.max(extracted) - np.min(extracted)) / 2)
-    for peak_index in range(0, len(total_y_peak_data[0])):
-        extracted = Extract(total_y_peak_data, peak_index)
-        if extracted != None:
-            peak_y_averages.append(np.mean(extracted))
-            peak_y_sigmas.append(np.std(extracted))
-            peak_y_range.append((np.max(extracted) - np.min(extracted)) / 2)
+    total_x_peak_data_filtered = np.zeros((0, len(best_savgol_parameters)))
+    total_y_peak_data_filtered = np.zeros((0, len(best_savgol_parameters)))
+
+    #filter out additional peaks found from different savgol parameters
+    for i in range(len(total_x_peak_data[0])):
+        while True:
+            check = 0
+            try:
+                x_values = [item[i] for item in total_x_peak_data]
+            except IndexError:
+                break
+            y_values = [item[i] for item in total_y_peak_data]
+            mean = np.mean(x_values)
+            std = np.std(x_values)
+            for j, x in enumerate(x_values):
+                if x > (mean + 3 * std) or x < (mean - 3 * std):
+                    x_values.pop(j)
+                    y_values.pop(j)
+                    break
+                else:
+                    check += 1
+            if check==len(best_savgol_parameters):
+                total_x_peak_data_filtered = np.vstack((total_x_peak_data_filtered
+                                                        ,x_values))
+                total_y_peak_data_filtered = np.vstack((total_y_peak_data_filtered
+                                                        ,y_values))
+                break
+
+
+    for peak_x in total_x_peak_data_filtered:
+        peak_x_averages.append(np.mean(peak_x))
+        peak_x_sigmas.append(np.std(peak_x))
+        peak_x_range.append((np.max(peak_x) - np.min(peak_x)) / 2)
+    for peak_y in total_y_peak_data_filtered:
+        peak_y_averages.append(np.mean(peak_y))
+        peak_y_sigmas.append(np.std(peak_y))
+        peak_y_range.append((np.max(peak_y) - np.min(peak_y)) / 2)
+    
 
     axs.errorbar(peak_x_averages, peak_y_averages, xerr = peak_x_range, yerr=peak_y_sigmas, fmt='bx')
 
@@ -96,8 +114,6 @@ def draw_plot(title, data, savgol_parameter, filename,
     # if len(filtered_peaks) > 3 or len(filtered_troughs) > 3:
     #     fit_gaussian(filtered_peaks, filtered_data[filtered_peaks], axs)
     #     fit_gaussian(filtered_troughs, filtered_data[filtered_troughs], axs)
-
-    # analysis with different fringe spacings
 
     axs.grid()
 

@@ -78,7 +78,8 @@ def fit_gaussian(x_data, y_data, axis):
     # uncertainty = np.sqrt(np.diagonal(cov))
 
     axis.plot(np.linspace(np.min(x_data), np.max(x_data)),
-              gaussian_curve(np.linspace(np.min(x_data), np.max(x_data)), *param), 'g--')
+              gaussian_curve(np.linspace(np.min(x_data),
+              np.max(x_data)), *param), 'g--')
     return
 
 
@@ -126,11 +127,10 @@ def optimize_savgol(data, savgol_0, peak_prominence, axs):
         chi_lis = np.append(chi_lis, red_chi_square(data[:, 1], w))
         # abs_list = np.append(abs_list, np.sum(np.abs(data[:, 1] - w)))
         # axs.plot(data[:, 0], w)
-
-
-    # print(chi_lis)
-    # print(abs_list)
-    closest, closest_index = find_closest(chi_lis, chi_lis[np.where(range_values==find_nearest(range_values, savgol_0))], 5)
+    closest, closest_index = find_closest(chi_lis,
+                                          chi_lis[np.where(range_values
+                                          ==find_nearest(range_values, savgol_0))]
+                                          , 5)
     best_savgol = np.take(range_values, closest_index.astype(int))
 
     for savgol_param in best_savgol:
@@ -138,3 +138,13 @@ def optimize_savgol(data, savgol_0, peak_prominence, axs):
         axs.plot(data[:, 0], best_data)
 
     return best_savgol
+
+
+def extract_index(lst, i):
+    result = []
+    try:
+        for item in lst:
+            result.append(item[i])
+        return result
+    except IndexError:
+        return None
