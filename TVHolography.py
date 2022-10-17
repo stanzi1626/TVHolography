@@ -15,11 +15,11 @@ from Functions import read_data, find_peaks,\
         filter_peaks, find_linear_parameters,\
         fit_gaussian, optimize_savgol, red_chi_square
 
-FILENAME_1 = "2022_10_04 Second Run/Rising/Data/"
-FILENAME_2 = "2022_10_04 Second Run/Decreasing/Data/"
-SAVE_FOLDER_1 = "2022_10_04 Second Run/Rising/Results/"
-SAVE_FOLDER_2 = "2022_10_04 Second Run/Decreasing/Results/"
-SAVE_FOLDER_AVERAGES = "2022_10_04 Second Run/Comparison/"
+FILENAME_1 = "2022_10_13 Third Run/Values-Filtered/Rising/Data/"
+FILENAME_2 = "2022_10_13 Third Run/Values-Filtered/Decreasing/Data/"
+SAVE_FOLDER_1 = "2022_10_13 Third Run/Values-Filtered/Rising/Results/"
+SAVE_FOLDER_2 = "2022_10_13 Third Run/Values-Filtered/Decreasing/Results/"
+SAVE_FOLDER_AVERAGES = "2022_10_13 Third Run/Values-Filtered/Comparison/"
 X_VARIABLE = "Voltage"
 Y_VARIABLE = 'Grey Value (Intensity)'
 
@@ -49,7 +49,7 @@ def draw_plot(title, data, savgol_parameter, filename,
     axs.plot(data[:, 0], data[:, 1], 'k')
     
 
-    best_savgol_parameters = optimize_savgol(data[750:2250], savgol_parameter, peak_prominence, axs)
+    best_savgol_parameters = optimize_savgol(data[1000:2750], savgol_parameter, peak_prominence, axs)
     print(best_savgol_parameters)
 
     total_x_peak_data = []
@@ -60,11 +60,11 @@ def draw_plot(title, data, savgol_parameter, filename,
         # flipped_data = copy.deepcopy(data)
         # flipped_data[:, 1] = -flipped_data[:, 1] 
         # troughs, _ = find_peaks(flipped_data, sav_param, peak_prominence)
-        filtered_peaks = filter_peaks(peaks, filtered_data, 0.6)
+        filtered_peaks = filter_peaks(peaks, filtered_data, 1)
         total_x_peak_data.append(filtered_peaks)
         total_y_peak_data.append(filtered_data[filtered_peaks])
         # filtered_troughs = filter_peaks(troughs, filtered_data, 0.3)
-        # axs.plot(filtered_peaks, filtered_data[filtered_peaks], '.')
+        axs.plot(filtered_peaks, filtered_data[filtered_peaks], '.')
     
     peak_x_averages = []
     peak_x_sigmas = []

@@ -30,7 +30,7 @@ def read_data(file_name):
         except IndexError:
             print("Error: ", filename, " is empty")
 
-        all_data.append([filename[-15:-13], valid_data])
+        all_data.append([filename[-8:-6], valid_data])
 
     return all_data
 
