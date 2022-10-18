@@ -14,11 +14,11 @@ from Functions import read_data, find_peaks,\
         filter_peaks, find_linear_parameters
 from scipy.optimize import curve_fit
 
-FILENAME_1 = "2022_10_13 Third Run/Values (Non-filtered)/Rising/Data/"
-FILENAME_2 = "2022_10_13 Third Run/Values (Non-filtered)/Decreasing/Data/"
-SAVE_FOLDER_1 = "2022_10_13 Third Run/Values (Non-filtered)/Rising/Results/"
-SAVE_FOLDER_2 = "2022_10_13 Third Run/Values (Non-filtered)/Decreasing/Results/"
-SAVE_FOLDER_AVERAGES = "2022_10_13 Third Run/Values (Non-filtered)/Comparison/"
+FILENAME_1 = "2022_10_13 Third Run/Values (Filtered)/Rising/Data/"
+FILENAME_2 = "2022_10_13 Third Run/Values (Filtered)/Decreasing/Data/"
+SAVE_FOLDER_1 = "2022_10_13 Third Run/Values (Filtered)/Rising/Results/"
+SAVE_FOLDER_2 = "2022_10_13 Third Run/Values (Filtered)/Decreasing/Results/"
+SAVE_FOLDER_AVERAGES = "2022_10_13 Third Run/Values (Filtered)/Comparison/"
 X_VARIABLE = "Voltage"
 Y_VARIABLE = 'Grey Value (Intensity)'
 
