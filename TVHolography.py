@@ -10,21 +10,21 @@ import matplotlib.pyplot as plt
 
 from Parameters import SAVGOL_FILTER_PARAMETERS_1,\
         SAVGOL_FILTER_PARAMETERS_2, PEAK_PROMINENCE
-from Functions import read_data, find_peaks,\
-        filter_peaks, find_linear_parameters
-from scipy.optimize import curve_fit
+from Functions import gaussian_peak, read_data, find_peaks,\
+        filter_peaks, find_linear_parameters,\
+        fit_gaussian, weighted_arithmetic_mean
 
-FILENAME_1 = "2022_10_13 Third Run/Values (Filtered)/Rising/Data/"
-FILENAME_2 = "2022_10_13 Third Run/Values (Filtered)/Decreasing/Data/"
-SAVE_FOLDER_1 = "2022_10_13 Third Run/Values (Filtered)/Rising/Results/"
-SAVE_FOLDER_2 = "2022_10_13 Third Run/Values (Filtered)/Decreasing/Results/"
-SAVE_FOLDER_AVERAGES = "2022_10_13 Third Run/Values (Filtered)/Comparison/"
+FILENAME_1 = "2022_10_04 Second Run/Rising/Data/"
+FILENAME_2 = "2022_10_04 Second Run/Decreasing/Data/"
+SAVE_FOLDER_1 = "2022_10_04 Second Run/Rising/Results/"
+SAVE_FOLDER_2 = "2022_10_04 Second Run/Decreasing/Results/"
+SAVE_FOLDER_AVERAGES = "2022_10_04 Second Run/Comparison/"
 X_VARIABLE = "Voltage"
 Y_VARIABLE = 'Grey Value (Intensity)'
 
 
 def draw_plot(title, data, savgol_parameter, filename,
-              save_folder, peak_prominence):
+              save_folder, peak_prominence, direction):
     fig, axs = plt.subplots(1, 1)
     fig.set_size_inches(15, 6)
 
@@ -47,13 +47,38 @@ def draw_plot(title, data, savgol_parameter, filename,
     axs.scatter(filtered_peaks, filtered_data[filtered_peaks], c='b', s=50)
     axs.scatter(filtered_troughs, filtered_data[filtered_troughs], c='b', s=50)
 
-    print(title)
+    print(("{0}V {1} with savgol parameter of: {2}").format(title, direction,
+                                                            savgol_parameter))
 
     if len(filtered_peaks) > 3 or len(filtered_troughs) > 3:
         fit_gaussian(filtered_peaks, filtered_data[filtered_peaks], axs)
         fit_gaussian(filtered_troughs, filtered_data[filtered_troughs], axs)
 
+    #flip the data back
+    data[:, 1] = -data[:, 1]
+
     peak_diff = np.diff(filtered_peaks)
+    fringe_spacing_guess = np.average(peak_diff)
+
+    sigmas = []
+    mean_peak = []
+    
+    #plot a gaussian at each peack using the average fringe spacing as the width
+    for peak in filtered_peaks:
+        mean, uncertainty = gaussian_peak(data[np.where((
+                                    data[:, 0] < peak + fringe_spacing_guess / 2)\
+                                    & (data[:, 0] > peak - fringe_spacing_guess / 2))],
+                                    peak, axs)
+        sigmas.append(uncertainty)
+        mean_peak.append(mean)
+    
+    fringe_spacing = np.diff(mean_peak)
+    fringe_spacing_uncertainty = []
+    for i in range(len(mean_peak) - 1):
+        uncertainty = np.sqrt(sigmas[i]**2 + sigmas[i + 1]**2)
+        fringe_spacing_uncertainty.append(uncertainty)
+    
+    mean_fringe_spacing, mean_fringe_spacing_sigma = weighted_arithmetic_mean(fringe_spacing, fringe_spacing_uncertainty) 
 
     axs.grid()
     axs.set_xlim((np.min(data[:, 0]), np.max(data[:, 0])))
@@ -62,24 +87,10 @@ def draw_plot(title, data, savgol_parameter, filename,
     plt.savefig(save_folder + title, dpi=300, transparent=False)
     plt.close()
 
-    return np.array((int(title), 1 / np.average(peak_diff),
-                    (1 / (np.average(peak_diff) ** 2))
-                    * np.std(peak_diff) / np.sqrt(len(peak_diff))))
+    return np.array((int(title), 1 / mean_fringe_spacing,
+                    (1 / (mean_fringe_spacing ** 2))
+                    * mean_fringe_spacing_sigma))
 
-def fit_gaussian(x_data, y_data, axis):
-    mu_guess = np.average(x_data)
-    std_guess = 100
-    param, _ = curve_fit(gaussian_curve, x_data, y_data,
-                         p0=[1.5, std_guess, mu_guess])
-    # uncertainty = np.sqrt(np.diagonal(cov))
-
-    axis.plot(np.linspace(np.min(x_data), np.max(x_data)),
-              gaussian_curve(np.linspace(np.min(x_data), np.max(x_data)), *param), 'g--')
-    return
-
-def gaussian_curve(x_data, A, sigma, mu):
-    exponent = - (x_data - mu) ** 2 / (2 * sigma ** 2)
-    return A * np.exp(exponent)
 
 def plot_averages(data_1, data_2, save_folder):
     fig, axs = plt.subplots(1, 1)
@@ -141,7 +152,8 @@ def main():
             averages_1 = np.vstack((averages_1, draw_plot(data[0], data[1],
                                     SAVGOL_FILTER_PARAMETERS_1[data[0]],
                                     FILENAME_1,
-                                    SAVE_FOLDER_1, PEAK_PROMINENCE["Rising"])))
+                                    SAVE_FOLDER_1, PEAK_PROMINENCE["Rising"], 
+                                    "Rising")))
         else:
             print("No (valid) files provided, ending program")
 
@@ -150,7 +162,8 @@ def main():
             averages_2 = np.vstack((averages_2, draw_plot(data[0], data[1],
                                     SAVGOL_FILTER_PARAMETERS_2[data[0]],
                                     FILENAME_2, SAVE_FOLDER_2,
-                                    PEAK_PROMINENCE["Decreasing"])))
+                                    PEAK_PROMINENCE["Decreasing"],
+                                    "Decreasing")))
         else:
             print("No (valid) files provided, ending program")
 
