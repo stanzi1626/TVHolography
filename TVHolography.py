@@ -14,11 +14,11 @@ from Functions import gaussian_peak, read_data, find_peaks,\
         filter_peaks, find_linear_parameters,\
         fit_gaussian, weighted_arithmetic_mean
 
-FILENAME_1 = "2022_10_04 Second Run/Rising/Data/"
-FILENAME_2 = "2022_10_04 Second Run/Decreasing/Data/"
-SAVE_FOLDER_1 = "2022_10_04 Second Run/Rising/Results/"
-SAVE_FOLDER_2 = "2022_10_04 Second Run/Decreasing/Results/"
-SAVE_FOLDER_AVERAGES = "2022_10_04 Second Run/Comparison/"
+FILENAME_1 = "2022_10_18 Fourth Run/Rising/Data/"
+FILENAME_2 = "2022_10_18 Fourth Run/Decreasing/Data/"
+SAVE_FOLDER_1 = "2022_10_18 Fourth Run/Rising/Results/"
+SAVE_FOLDER_2 = "2022_10_18 Fourth Run/Decreasing/Results/"
+SAVE_FOLDER_AVERAGES = "2022_10_18 Fourth Run/Comparison/"
 X_VARIABLE = "Voltage"
 Y_VARIABLE = 'Grey Value (Intensity)'
 
@@ -50,7 +50,7 @@ def draw_plot(title, data, savgol_parameter, filename,
     print(("{0}V {1} with savgol parameter of: {2}").format(title, direction,
                                                             savgol_parameter))
 
-    if len(filtered_peaks) > 3 or len(filtered_troughs) > 3:
+    if len(filtered_peaks) > 4 and len(filtered_troughs) > 4:
         fit_gaussian(filtered_peaks, filtered_data[filtered_peaks], axs)
         fit_gaussian(filtered_troughs, filtered_data[filtered_troughs], axs)
 
@@ -87,9 +87,9 @@ def draw_plot(title, data, savgol_parameter, filename,
     plt.savefig(save_folder + title, dpi=300, transparent=False)
     plt.close()
 
-    return np.array((int(title), 1 / mean_fringe_spacing,
-                    (1 / (mean_fringe_spacing ** 2))
-                    * mean_fringe_spacing_sigma))
+    return np.array((int(title), 1 / np.average(fringe_spacing),
+                    (1 / (np.average(fringe_spacing) ** 2))
+                    * np.std(fringe_spacing) * (1 / np.sqrt(len(fringe_spacing)))))
 
 
 def plot_averages(data_1, data_2, save_folder):
@@ -103,22 +103,22 @@ def plot_averages(data_1, data_2, save_folder):
                   fontsize=18, fontfamily='times new roman')
 
     # Non fitted data points
-    axs.errorbar(np.hstack((data_1[:, 0][:2], data_1[:, 0][-2:])),
-                 np.hstack((data_1[:, 1][:2], data_1[:, 1][-2:])),
-                 yerr=np.hstack((data_1[:, 2][:2], data_1[:, 2][-2:])),
+    axs.errorbar(np.hstack((data_1[:, 0][:1], data_1[:, 0][-1:])),
+                 np.hstack((data_1[:, 1][:1], data_1[:, 1][-1:])),
+                 yerr=np.hstack((data_1[:, 2][:1], data_1[:, 2][-1:])),
                  fmt='kx')
-    axs.errorbar(np.hstack((data_2[:, 0][:2], data_2[:, 0][-2:])),
-                 np.hstack((data_2[:, 1][:2], data_2[:, 1][-2:])),
-                 yerr=np.hstack((data_2[:, 2][:2], data_2[:, 2][-2:])),
+    axs.errorbar(np.hstack((data_2[:, 0][:1], data_2[:, 0][-1:])),
+                 np.hstack((data_2[:, 1][:1], data_2[:, 1][-1:])),
+                 yerr=np.hstack((data_2[:, 2][:1], data_2[:, 2][-1:])),
                  fmt='kx')
     # fitted data points [2:-2]
-    axs.errorbar(data_1[:, 0][2:-2], data_1[:, 1][2:-2],
-                 yerr=data_1[:, 2][2:-2], fmt='bx')
-    axs.errorbar(data_2[:, 0][2:-2], data_2[:, 1][2:-2],
-                 yerr=data_2[:, 2][2:-2], fmt='rx')
+    axs.errorbar(data_1[:, 0][1:-1], data_1[:, 1][1:-1],
+                 yerr=data_1[:, 2][1:-1], fmt='bx')
+    axs.errorbar(data_2[:, 0][1:-1], data_2[:, 1][1:-1],
+                 yerr=data_2[:, 2][1:-1], fmt='rx')
 
-    m_1, c_1, sigma_m_1, sigma_c_1 = find_linear_parameters(data_1[2:-2])
-    m_2, c_2, sigma_m_2, sigma_c_2 = find_linear_parameters(data_2[2:-2])
+    m_1, c_1, sigma_m_1, sigma_c_1 = find_linear_parameters(data_1[1:-1])
+    m_2, c_2, sigma_m_2, sigma_c_2 = find_linear_parameters(data_2[1:-1])
 
     plt.plot(np.linspace(0, 55), m_1*np.linspace(0, 55) + c_1, color='blue',
              label="Rising voltage: y =({0:.3g} $\pm$ {1:.3g})x"\

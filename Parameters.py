@@ -29,6 +29,6 @@ SAVGOL_FILTER_PARAMETERS_2 = {"00": 501, #savgol parameters for decreasing volta
                             "65": 11,
                             "70": 11,} 
 PEAK_PROMINENCE = {
-    "Rising": 0.05,
-    "Decreasing": 0.05
+    "Rising": 0.8,
+    "Decreasing": 0.8
 }                        
