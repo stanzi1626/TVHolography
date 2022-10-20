@@ -14,11 +14,11 @@ from Functions import gaussian_peak, read_data, find_peaks,\
         filter_peaks, find_linear_parameters,\
         fit_gaussian, weighted_arithmetic_mean
 
-FILENAME_1 = "2022_10_18 Fourth Run/Rising/Data/"
-FILENAME_2 = "2022_10_18 Fourth Run/Decreasing/Data/"
-SAVE_FOLDER_1 = "2022_10_18 Fourth Run/Rising/Results/"
-SAVE_FOLDER_2 = "2022_10_18 Fourth Run/Decreasing/Results/"
-SAVE_FOLDER_AVERAGES = "2022_10_18 Fourth Run/Comparison/"
+FILENAME_1 = "2022_10_04 Second Run/Rising/Data/"
+FILENAME_2 = "2022_10_04 Second Run/Decreasing/Data/"
+SAVE_FOLDER_1 = "2022_10_04 Second Run/Rising/Results/"
+SAVE_FOLDER_2 = "2022_10_04 Second Run/Decreasing/Results/"
+SAVE_FOLDER_AVERAGES = "2022_10_04 Second Run/Comparison/"
 X_VARIABLE = "Voltage"
 Y_VARIABLE = 'Grey Value (Intensity)'
 
@@ -80,6 +80,12 @@ def draw_plot(title, data, savgol_parameter, filename,
     
     mean_fringe_spacing, mean_fringe_spacing_sigma = weighted_arithmetic_mean(fringe_spacing, fringe_spacing_uncertainty) 
 
+
+    # pixels to metres
+    pix_to_m = 460e2
+
+    metre_fringe_spacing = fringe_spacing / pix_to_m
+
     axs.grid()
     axs.set_xlim((np.min(data[:, 0]), np.max(data[:, 0])))
 
@@ -87,9 +93,10 @@ def draw_plot(title, data, savgol_parameter, filename,
     plt.savefig(save_folder + title, dpi=300, transparent=False)
     plt.close()
 
-    return np.array((int(title), 1 / np.average(fringe_spacing),
-                    (1 / (np.average(fringe_spacing) ** 2))
-                    * np.std(fringe_spacing) * (1 / np.sqrt(len(fringe_spacing)))))
+    return np.array((int(title), 1 / np.average(metre_fringe_spacing),
+                    (1 / (np.average(metre_fringe_spacing) ** 2))
+                    * np.std(metre_fringe_spacing) *
+                    (1 / np.sqrt(len(metre_fringe_spacing)))))
 
 
 def plot_averages(data_1, data_2, save_folder):
@@ -97,7 +104,7 @@ def plot_averages(data_1, data_2, save_folder):
     fig.set_size_inches(15, 6)
 
     axs.set_xlabel("Voltage", fontsize=14, fontfamily='times new roman')
-    axs.set_ylabel("1 / Fringe seperation in pixels",
+    axs.set_ylabel("1 / Fringe seperation in metres",
                    fontsize=14, fontfamily='times new roman')
     axs.set_title(FILENAME_1[: -1] + " and " + FILENAME_2[: -1],
                   fontsize=18, fontfamily='times new roman')
@@ -123,7 +130,7 @@ def plot_averages(data_1, data_2, save_folder):
     plt.plot(np.linspace(0, 55), m_1*np.linspace(0, 55) + c_1, color='blue',
              label="Rising voltage: y =({0:.3g} $\pm$ {1:.3g})x"\
                    .format(m_1, sigma_m_1)
-                   +" + {0:.1g} $\pm$ {1:.1g}"\
+                   +" + {0:.3g} $\pm$ {1:.1g}"\
                    .format(c_1, sigma_c_1))
     plt.plot(np.linspace(0, 55), m_2*np.linspace(0, 55) + c_2, color='red',
              label="Decreasing voltage: y =({0:.3g} $\pm$ {1:.1g})x"\
