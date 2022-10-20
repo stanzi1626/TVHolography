@@ -9,10 +9,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from Parameters import SAVGOL_FILTER_PARAMETERS_1,\
-        SAVGOL_FILTER_PARAMETERS_2, PEAK_PROMINENCE
+    SAVGOL_FILTER_PARAMETERS_2, PEAK_PROMINENCE
 from Functions import gaussian_peak, read_data, find_peaks,\
-        filter_peaks, find_linear_parameters,\
-        fit_gaussian, weighted_arithmetic_mean
+    filter_peaks, find_linear_parameters,\
+    fit_gaussian, weighted_arithmetic_mean
 
 FILENAME_1 = "2022_10_04 Second Run/Rising/Data/"
 FILENAME_2 = "2022_10_04 Second Run/Decreasing/Data/"
@@ -29,10 +29,10 @@ def draw_plot(title, data, savgol_parameter, filename,
     fig.set_size_inches(15, 6)
 
     axs.set_xlabel("Distance (Pixels)", fontsize=14,
-                      fontfamily='times new roman')
+                   fontfamily='times new roman')
     axs.set_ylabel(Y_VARIABLE, fontsize=14, fontfamily='times new roman')
     axs.set_title(filename[: -1] + "-" + title + "V", fontsize=18,
-                     fontfamily='times new roman')
+                  fontfamily='times new roman')
 
     axs.plot(data[:, 0], data[:, 1], 'k')
     peaks, filtered_data = find_peaks(data, savgol_parameter, peak_prominence)
@@ -54,7 +54,7 @@ def draw_plot(title, data, savgol_parameter, filename,
         fit_gaussian(filtered_peaks, filtered_data[filtered_peaks], axs)
         fit_gaussian(filtered_troughs, filtered_data[filtered_troughs], axs)
 
-    #flip the data back
+   # flip the data back
     data[:, 1] = -data[:, 1]
 
     peak_diff = np.diff(filtered_peaks)
@@ -62,27 +62,27 @@ def draw_plot(title, data, savgol_parameter, filename,
 
     sigmas = []
     mean_peak = []
-    
-    #plot a gaussian at each peack using the average fringe spacing as the width
+
+    # plot a gaussian at each peack using the average fringe spacing as the width
     for peak in filtered_peaks:
         mean, uncertainty = gaussian_peak(data[np.where((
-                                    data[:, 0] < peak + fringe_spacing_guess / 2)\
-                                    & (data[:, 0] > peak - fringe_spacing_guess / 2))],
-                                    peak, axs)
+            data[:, 0] < peak + fringe_spacing_guess / 2)
+            & (data[:, 0] > peak - fringe_spacing_guess / 2))],
+            peak, axs)
         sigmas.append(uncertainty)
         mean_peak.append(mean)
-    
+
     fringe_spacing = np.diff(mean_peak)
     fringe_spacing_uncertainty = []
     for i in range(len(mean_peak) - 1):
         uncertainty = np.sqrt(sigmas[i]**2 + sigmas[i + 1]**2)
         fringe_spacing_uncertainty.append(uncertainty)
-    
-    mean_fringe_spacing, mean_fringe_spacing_sigma = weighted_arithmetic_mean(fringe_spacing, fringe_spacing_uncertainty) 
 
+    mean_fringe_spacing, mean_fringe_spacing_sigma = weighted_arithmetic_mean(
+        fringe_spacing, fringe_spacing_uncertainty)
 
     # pixels to metres
-    pix_to_m = 460e2
+    pix_to_m = 1/460e2
 
     metre_fringe_spacing = fringe_spacing / pix_to_m
 
@@ -128,15 +128,15 @@ def plot_averages(data_1, data_2, save_folder):
     m_2, c_2, sigma_m_2, sigma_c_2 = find_linear_parameters(data_2[1:-1])
 
     plt.plot(np.linspace(0, 55), m_1*np.linspace(0, 55) + c_1, color='blue',
-             label="Rising voltage: y =({0:.3g} $\pm$ {1:.3g})x"\
+             label="Rising voltage: y =({0:.3g} $\pm$ {1:.3g})x"
                    .format(m_1, sigma_m_1)
-                   +" + {0:.3g} $\pm$ {1:.1g}"\
+                   + " + {0:.3g} $\pm$ {1:.1g}"
                    .format(c_1, sigma_c_1))
     plt.plot(np.linspace(0, 55), m_2*np.linspace(0, 55) + c_2, color='red',
-             label="Decreasing voltage: y =({0:.3g} $\pm$ {1:.1g})x"\
-                    .format(m_2, sigma_m_2)
-                    +" + {0:.3g} $\pm$ {1:.1g}"\
-                    .format(c_2, sigma_c_2))
+             label="Decreasing voltage: y =({0:.3g} $\pm$ {1:.1g})x"
+             .format(m_2, sigma_m_2)
+             + " + {0:.3g} $\pm$ {1:.1g}"
+             .format(c_2, sigma_c_2))
 
     axs.grid()
     plt.legend()
@@ -159,7 +159,7 @@ def main():
             averages_1 = np.vstack((averages_1, draw_plot(data[0], data[1],
                                     SAVGOL_FILTER_PARAMETERS_1[data[0]],
                                     FILENAME_1,
-                                    SAVE_FOLDER_1, PEAK_PROMINENCE["Rising"], 
+                                    SAVE_FOLDER_1, PEAK_PROMINENCE["Rising"],
                                     "Rising")))
         else:
             print("No (valid) files provided, ending program")
