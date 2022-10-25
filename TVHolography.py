@@ -12,7 +12,8 @@ from Parameters import SAVGOL_FILTER_PARAMETERS_1,\
     SAVGOL_FILTER_PARAMETERS_2, PEAK_PROMINENCE
 from Functions import gaussian_peak, read_data, find_peaks,\
     filter_peaks, find_linear_parameters,\
-    fit_gaussian, weighted_arithmetic_mean
+    fit_gaussian, weighted_arithmetic_mean,\
+    distance_conversion
 
 FILENAME_1 = "2022_10_04 Second Run/Rising/Data/"
 FILENAME_2 = "2022_10_04 Second Run/Decreasing/Data/"
@@ -86,13 +87,25 @@ def draw_plot(title, data, savgol_parameter, filename,
         uncertainty = np.sqrt(sigmas[i]**2 + sigmas[i + 1]**2)
         fringe_spacing_uncertainty.append(uncertainty)
 
-    mean_fringe_spacing, mean_fringe_spacing_sigma = weighted_arithmetic_mean(
-        fringe_spacing, fringe_spacing_uncertainty)
+    # mean_fringe_spacing, mean_fringe_spacing_sigma = weighted_arithmetic_mean(
+    #     fringe_spacing, fringe_spacing_uncertainty)
+
+    #average spacing in pixels
+    average_fringe_spacing = np.average(fringe_spacing)
+    uncertainty_fringe_spacing = np.std(fringe_spacing) / np.sqrt(len(fringe_spacing))
 
     # pixels to metres
-    pix_to_m = 1/460e2
+    pix_to_m = 465e2
+    uncertainty_pix_to_m = 11e2
 
-    metre_fringe_spacing = fringe_spacing / pix_to_m
+    metre_fringe_spacing = average_fringe_spacing / pix_to_m
+
+    uncertainty_metre_fringe_spacing = np.sqrt((1/pix_to_m)**2 * uncertainty_fringe_spacing**2 +
+                                               (average_fringe_spacing/(pix_to_m**2))**2 *
+                                               uncertainty_pix_to_m**2)
+
+    displacement, displ_err = distance_conversion(average_fringe_spacing,
+                                           uncertainty_fringe_spacing)
 
     axs.grid()
     axs.set_xlim((np.min(data[:, 0]), np.max(data[:, 0])))
@@ -101,12 +114,15 @@ def draw_plot(title, data, savgol_parameter, filename,
     plt.savefig(save_folder + title, dpi=300, transparent=False)
     plt.close()
 
-    return (np.array((int(title), 1 / np.average(metre_fringe_spacing),
-                    (1 / (np.average(metre_fringe_spacing) ** 2))
-                    * np.std(metre_fringe_spacing) *
-                    (1 / np.sqrt(len(metre_fringe_spacing))))),
-            np.array((int(title), visibility)))
+    return (np.array((int(title), 1 / (metre_fringe_spacing),
+                    (1 / (metre_fringe_spacing) ** 2)
+                    * uncertainty_metre_fringe_spacing)),
+            np.array((int(title), visibility)),
+            np.array((int(title, displacement, displ_err))))
 
+# what is the array meant to have?
+# title, 1/fringe spacing, erro on 1/fringe spacing?
+# idk ill doube check, coz it looks wrong
 
 def plot_averages(data_1, data_2, save_folder):
     fig, axs = plt.subplots(1, 1)
@@ -188,7 +204,7 @@ def main():
 
     for data in all_data_1:
         if len(data[1]) > 0:
-            avg_data_1, vis_1 = draw_plot(data[0], data[1],
+            avg_data_1, vis_1, displ_1 = draw_plot(data[0], data[1],
                                     SAVGOL_FILTER_PARAMETERS_1[data[0]],
                                     FILENAME_1,
                                     SAVE_FOLDER_1, PEAK_PROMINENCE["Rising"],
@@ -202,7 +218,7 @@ def main():
 
     for data in all_data_2:
         if len(data[1]) > 0:
-            avg_data_2, vis_2 = draw_plot(data[0], data[1],
+            avg_data_2, vis_2, displ_2 = draw_plot(data[0], data[1],
                                     SAVGOL_FILTER_PARAMETERS_2[data[0]],
                                     FILENAME_2, SAVE_FOLDER_2,
                                     PEAK_PROMINENCE["Decreasing"],

@@ -101,3 +101,19 @@ def weighted_arithmetic_mean(data, uncertanties):
         np.sum(weighted_uncertanties)
     weighted_mean_standard_error = 1 / np.sqrt(np.sum(weighted_uncertanties))
     return weighted_mean, weighted_mean_standard_error
+
+def distance_conversion(pixel_dist, pixel_err):
+    pix_to_m = 465e2
+    pix_to_m_err = 11e2
+
+    scrn_len = 74.348e-3
+    scrn_err = 3e-6
+
+    wavelength = 632.8e-9
+
+    displ = (wavelength/2) * (scrn_len * pix_to_m / pixel_dist)
+    displ_err = (wavelength/2) * np.sqrt((pix_to_m * scrn_err / pixel_dist) ** 2 +
+                                         (scrn_len * pix_to_m_err / pixel_dist) ** 2 +
+                                         (scrn_len * pix_to_m * pixel_err / (pixel_dist ** 2)) ** 2)
+
+    return displ, displ_err
