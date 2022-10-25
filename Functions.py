@@ -68,8 +68,6 @@ def find_linear_parameters(data):
 
 def gaussian_smooth_filter(y_data, sigma):
     return gaussian_filter(y_data, sigma)
-<<<<<<< Updated upstream
-=======
 
 
 def fit_gaussian(x_data, y_data, axis):
@@ -103,4 +101,3 @@ def weighted_arithmetic_mean(data, uncertanties):
         np.sum(weighted_uncertanties)
     weighted_mean_standard_error = 1 / np.sqrt(np.sum(weighted_uncertanties))
     return weighted_mean, weighted_mean_standard_error
->>>>>>> Stashed changes

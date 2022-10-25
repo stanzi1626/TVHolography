@@ -9,10 +9,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from Parameters import SAVGOL_FILTER_PARAMETERS_1,\
-        SAVGOL_FILTER_PARAMETERS_2, PEAK_PROMINENCE
-from Functions import read_data, find_peaks,\
-        filter_peaks, find_linear_parameters
-from scipy.optimize import curve_fit
+    SAVGOL_FILTER_PARAMETERS_2, PEAK_PROMINENCE
+from Functions import gaussian_peak, read_data, find_peaks,\
+    filter_peaks, find_linear_parameters,\
+    fit_gaussian, weighted_arithmetic_mean
 
 FILENAME_1 = "2022_10_04 Second Run/Rising/Data/"
 FILENAME_2 = "2022_10_04 Second Run/Decreasing/Data/"
@@ -24,17 +24,18 @@ Y_VARIABLE = 'Grey Value (Intensity)'
 
 
 def draw_plot(title, data, savgol_parameter, filename,
-              save_folder, peak_prominence):
+              save_folder, peak_prominence, direction):
+
+    visibility = 0
+
     fig, axs = plt.subplots(1, 1)
     fig.set_size_inches(15, 6)
 
-    axs.set_xlabel("Distance (Pixels)", fontsize=14,
-                      fontfamily='times new roman')
+    axs.set_xlabel("Distance [Pixels]", fontsize=14,
+                   fontfamily='times new roman')
     axs.set_ylabel(Y_VARIABLE, fontsize=14, fontfamily='times new roman')
     axs.set_title(filename[: -1] + "-" + title + "V", fontsize=18,
-                     fontfamily='times new roman')
-    # axs[1].set_title(title + 'V filtered with peaks', fontsize=18,
-    #                  fontfamily='times new roman')
+                  fontfamily='times new roman')
 
     axs.plot(data[:, 0], data[:, 1], 'k')
     peaks, filtered_data = find_peaks(data, savgol_parameter, peak_prominence)
@@ -49,92 +50,132 @@ def draw_plot(title, data, savgol_parameter, filename,
     axs.scatter(filtered_peaks, filtered_data[filtered_peaks], c='b', s=50)
     axs.scatter(filtered_troughs, filtered_data[filtered_troughs], c='b', s=50)
 
-    fit_gaussian(filtered_peaks, filtered_data[filtered_peaks], axs)
+    print(("{0}V {1} with savgol parameter of: {2}").format(title, direction,
+                                                            savgol_parameter))
+
+    if len(filtered_peaks) > 4 and len(filtered_troughs) > 4:
+        I_max = fit_gaussian(filtered_peaks, filtered_data[filtered_peaks], axs)
+        I_min = fit_gaussian(filtered_troughs, filtered_data[filtered_troughs], axs)
+
+        try:
+            visibility = (I_max - I_min) / (I_max + I_min)
+        except:
+            visibility = 0
+
+   # flip the data back
+    data[:, 1] = -data[:, 1]
 
     peak_diff = np.diff(filtered_peaks)
+    fringe_spacing_guess = np.average(peak_diff)
 
-    # print(peak_diff)
-    # print(np.average(peak_diff))
-    # print(np.std(peak_diff) / np.sqrt(len(peak_diff)))
+    sigmas = []
+    mean_peak = []
+
+    # plot a gaussian at each peack using the average fringe spacing as the width
+    for peak in filtered_peaks:
+        mean, uncertainty = gaussian_peak(data[np.where((
+            data[:, 0] < peak + fringe_spacing_guess / 2)
+            & (data[:, 0] > peak - fringe_spacing_guess / 2))],
+            peak, axs)
+        sigmas.append(uncertainty)
+        mean_peak.append(mean)
+
+    fringe_spacing = np.diff(mean_peak)
+    fringe_spacing_uncertainty = []
+    for i in range(len(mean_peak) - 1):
+        uncertainty = np.sqrt(sigmas[i]**2 + sigmas[i + 1]**2)
+        fringe_spacing_uncertainty.append(uncertainty)
+
+    mean_fringe_spacing, mean_fringe_spacing_sigma = weighted_arithmetic_mean(
+        fringe_spacing, fringe_spacing_uncertainty)
+
+    # pixels to metres
+    pix_to_m = 1/460e2
+
+    metre_fringe_spacing = fringe_spacing / pix_to_m
 
     axs.grid()
-    # axs[1].grid()
-
     axs.set_xlim((np.min(data[:, 0]), np.max(data[:, 0])))
-    # axs[1].set_xlim((np.min(data[:, 0]), np.max(data[:, 0])))
 
     plt.tight_layout()
-    # plt.savefig(save_folder + title, dpi=300, transparent=False)
-    plt.show()
+    plt.savefig(save_folder + title, dpi=300, transparent=False)
+    plt.close()
 
-    return np.array((int(title), 1 / np.average(peak_diff),
-                    (1 / (np.average(peak_diff) ** 2))
-                    * np.std(peak_diff) / np.sqrt(len(peak_diff))))
+    return (np.array((int(title), 1 / np.average(metre_fringe_spacing),
+                    (1 / (np.average(metre_fringe_spacing) ** 2))
+                    * np.std(metre_fringe_spacing) *
+                    (1 / np.sqrt(len(metre_fringe_spacing))))),
+            np.array((int(title), visibility)))
 
-def fit_gaussian(x_data, y_data, axis):
-    print(x_data)
-    print(y_data)
-    mu_guess = np.average(x_data)
-    std_guess = 1000
-    param, _ = curve_fit(gaussian_curve, x_data, y_data,
-                         p0=[std_guess, mu_guess], maxfev=5000)
-    # uncertainty = np.sqrt(np.diagonal(cov))
-
-    axis.plot(x_data, gaussian_curve(x_data, *param), 'b--')
-
-def gaussian_curve(x_data, sigma, mu):
-    norm = 1 / (sigma * np.sqrt(2 * np.pi))
-    exponent = -0.5 * ((x_data - mu) / sigma) ** 2
-    return norm * np.exp(exponent)
 
 def plot_averages(data_1, data_2, save_folder):
     fig, axs = plt.subplots(1, 1)
     fig.set_size_inches(15, 6)
 
-    axs.set_xlabel("Voltage", fontsize=14, fontfamily='times new roman')
-    axs.set_ylabel("1 / Fringe seperation in pixels",
+    axs.set_xlabel("Voltage [V]", fontsize=14, fontfamily='times new roman')
+    axs.set_ylabel("1 / Fringe separation [m^-1]",
                    fontsize=14, fontfamily='times new roman')
     axs.set_title(FILENAME_1[: -1] + " and " + FILENAME_2[: -1],
                   fontsize=18, fontfamily='times new roman')
 
     # Non fitted data points
-    axs.errorbar(np.hstack((data_1[:, 0][:2], data_1[:, 0][-2:])),
-                 np.hstack((data_1[:, 1][:2], data_1[:, 1][-2:])),
-                 yerr=np.hstack((data_1[:, 2][:2], data_1[:, 2][-2:])),
+    axs.errorbar(np.hstack((data_1[:, 0][:1], data_1[:, 0][-1:])),
+                 np.hstack((data_1[:, 1][:1], data_1[:, 1][-1:])),
+                 yerr=np.hstack((data_1[:, 2][:1], data_1[:, 2][-1:])),
                  fmt='kx')
-    axs.errorbar(np.hstack((data_2[:, 0][:2], data_2[:, 0][-2:])),
-                 np.hstack((data_2[:, 1][:2], data_2[:, 1][-2:])),
-                 yerr=np.hstack((data_2[:, 2][:2], data_2[:, 2][-2:])),
+    axs.errorbar(np.hstack((data_2[:, 0][:1], data_2[:, 0][-1:])),
+                 np.hstack((data_2[:, 1][:1], data_2[:, 1][-1:])),
+                 yerr=np.hstack((data_2[:, 2][:1], data_2[:, 2][-1:])),
                  fmt='kx')
     # fitted data points [2:-2]
-    axs.errorbar(data_1[:, 0][2:-2], data_1[:, 1][2:-2],
-                 yerr=data_1[:, 2][2:-2], fmt='bx')
-    axs.errorbar(data_2[:, 0][2:-2], data_2[:, 1][2:-2],
-                 yerr=data_2[:, 2][2:-2], fmt='rx')
+    axs.errorbar(data_1[:, 0][1:-1], data_1[:, 1][1:-1],
+                 yerr=data_1[:, 2][1:-1], fmt='bx')
+    axs.errorbar(data_2[:, 0][1:-1], data_2[:, 1][1:-1],
+                 yerr=data_2[:, 2][1:-1], fmt='rx')
 
-    m_1, c_1, sigma_m_1, sigma_c_1 = find_linear_parameters(data_1[2:-2])
-    m_2, c_2, sigma_m_2, sigma_c_2 = find_linear_parameters(data_2[2:-2])
+    m_1, c_1, sigma_m_1, sigma_c_1 = find_linear_parameters(data_1[1:-1])
+    m_2, c_2, sigma_m_2, sigma_c_2 = find_linear_parameters(data_2[1:-1])
 
     plt.plot(np.linspace(0, 55), m_1*np.linspace(0, 55) + c_1, color='blue',
-             label="Rising voltage: y =({0:.3g} $\pm$ {1:.3g})x"\
+             label="Rising voltage: y =({0:.3g} $\pm$ {1:.3g})x"
                    .format(m_1, sigma_m_1)
-                   +" + {0:.1g} $\pm$ {1:.1g}"\
+                   + " + {0:.3g} $\pm$ {1:.1g}"
                    .format(c_1, sigma_c_1))
     plt.plot(np.linspace(0, 55), m_2*np.linspace(0, 55) + c_2, color='red',
-             label="Decreasing voltage: y =({0:.3g} $\pm$ {1:.1g})x"\
-                    .format(m_2, sigma_m_2)
-                    +" + {0:.3g} $\pm$ {1:.1g}"\
-                    .format(c_2, sigma_c_2))
+             label="Decreasing voltage: y =({0:.3g} $\pm$ {1:.1g})x"
+             .format(m_2, sigma_m_2)
+             + " + {0:.3g} $\pm$ {1:.1g}"
+             .format(c_2, sigma_c_2))
 
     axs.grid()
     plt.legend()
 
     plt.tight_layout()
-    plt.savefig(save_folder + "Voltage against (average fringe seperation)^-1",
+    plt.savefig(save_folder + "(Average fringe seperation)^-1 against Voltage",
                 dpi=300, transparent=False)
-    plt.close()
+    # plt.close()
     return
 
+def plot_visibility(data_1, data_2, save_folder):
+    fig, axs = plt.subplots(1, 1)
+    fig.set_size_inches(15, 6)
+
+    axs.set_xlabel("Voltage [V]", fontsize=14, fontfamily='times new roman')
+    axs.set_ylabel("Visibility", fontsize=14, fontfamily='times new roman')
+    axs.set_title(FILENAME_1[: -1] + " and " + FILENAME_2[: -1] + "Visibility",
+                  fontsize=18, fontfamily='times new roman')
+
+    filtered_data_1 = np.delete(data_1, np.where(data_1[:, 1] == 0), 0)
+    filtered_data_2 = np.delete(data_2, np.where(data_2[:, 1] == 0), 0)
+
+    axs.plot(filtered_data_1[:, 0], filtered_data_1[:, 1], 'b.')
+    axs.plot(filtered_data_2[:, 0], filtered_data_2[:, 1], 'r.')
+
+    axs.grid()
+
+    plt.tight_layout()
+
+    return
 
 def main():
     all_data_1 = read_data(FILENAME_1)
@@ -142,26 +183,38 @@ def main():
     averages_1 = np.empty((0, 3))
     averages_2 = np.empty((0, 3))
 
-    for data in all_data_1[2:3]:
+    visibility_1 = np.empty((0, 2))
+    visibility_2 = np.empty((0, 2))
+
+    for data in all_data_1:
         if len(data[1]) > 0:
-            averages_1 = np.vstack((averages_1, draw_plot(data[0], data[1],
+            avg_data_1, vis_1 = draw_plot(data[0], data[1],
                                     SAVGOL_FILTER_PARAMETERS_1[data[0]],
                                     FILENAME_1,
-                                    SAVE_FOLDER_1, PEAK_PROMINENCE["Rising"])))
+                                    SAVE_FOLDER_1, PEAK_PROMINENCE["Rising"],
+                                    "Rising")
+            averages_1 = np.vstack((averages_1, avg_data_1))
+            visibility_1 = np.vstack((visibility_1, vis_1))
+
+
         else:
             print("No (valid) files provided, ending program")
 
-    # for data in all_data_2:
-    #     if len(data[1]) > 0:
-    #         averages_2 = np.vstack((averages_2, draw_plot(data[0], data[1],
-    #                                 SAVGOL_FILTER_PARAMETERS_2[data[0]],
-    #                                 FILENAME_2, SAVE_FOLDER_2,
-    #                                 PEAK_PROMINENCE["Decreasing"])))
-    #     else:
-    #         print("No (valid) files provided, ending program")
+    for data in all_data_2:
+        if len(data[1]) > 0:
+            avg_data_2, vis_2 = draw_plot(data[0], data[1],
+                                    SAVGOL_FILTER_PARAMETERS_2[data[0]],
+                                    FILENAME_2, SAVE_FOLDER_2,
+                                    PEAK_PROMINENCE["Decreasing"],
+                                    "Decreasing")
+            averages_2 = np.vstack((averages_2, avg_data_2))
+            visibility_2 = np.vstack((visibility_2, vis_2))
+        else:
+            print("No (valid) files provided, ending program")
+    plot_averages(np.sort(averages_1, axis=0),
+                  np.sort(averages_2, axis=0), SAVE_FOLDER_AVERAGES)
 
-    # plot_averages(np.sort(averages_1, axis=0),
-    #               np.sort(averages_2, axis=0), SAVE_FOLDER_AVERAGES)
+    plot_visibility(visibility_1, visibility_2, '')
 
 
 main()
