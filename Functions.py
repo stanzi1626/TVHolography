@@ -68,3 +68,39 @@ def find_linear_parameters(data):
 
 def gaussian_smooth_filter(y_data, sigma):
     return gaussian_filter(y_data, sigma)
+<<<<<<< Updated upstream
+=======
+
+
+def fit_gaussian(x_data, y_data, axis):
+    mu_guess = np.average(x_data)
+    std_guess = 100
+    param, _ = curve_fit(gaussian_curve, x_data, y_data,
+                         p0=[1.5, std_guess, mu_guess])
+    # uncertainty = np.sqrt(np.diagonal(cov))
+    fitted_data = gaussian_curve(np.linspace(np.min(x_data), np.max(x_data)), *param)
+    axis.plot(np.linspace(np.min(x_data), np.max(x_data)),
+              fitted_data, 'g--')
+    return np.max(fitted_data)
+
+
+def gaussian_curve(x_data, A, sigma, mu):
+    exponent = - (x_data - mu) ** 2 / (2 * sigma ** 2)
+    return A * np.exp(exponent)
+
+
+def gaussian_peak(data, mean, axis):
+    param, cov = curve_fit(gaussian_curve, data[:, 0], data[:, 1],
+                           p0=[1.5, len(data[:, 0]), mean])
+    axis.plot(np.linspace(np.min(data[:, 0]), np.max(data[:, 0])),
+              gaussian_curve(np.linspace(np.min(data[:, 0]), np.max(data[:, 0])), *param), 'g--')
+    return param[2], np.sqrt(cov[2, 2])
+
+
+def weighted_arithmetic_mean(data, uncertanties):
+    weighted_uncertanties = np.power(np.power(uncertanties, 2), -1)
+    weighted_mean = np.sum(weighted_uncertanties * data) / \
+        np.sum(weighted_uncertanties)
+    weighted_mean_standard_error = 1 / np.sqrt(np.sum(weighted_uncertanties))
+    return weighted_mean, weighted_mean_standard_error
+>>>>>>> Stashed changes
