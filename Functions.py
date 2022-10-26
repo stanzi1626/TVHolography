@@ -130,6 +130,7 @@ def distance_conversion(pixel_dist, pixel_err):
 
     return displ, displ_err
 
+
 def find_residual(data, param):
     x_data = data[:, 0]
     y_data = data[:, 1]

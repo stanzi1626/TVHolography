@@ -5,19 +5,19 @@ Created on Fri Feb 11 12:42:47 2022
 @author: Ryand Yandoc and Alexander Stansfield
 """
 
+from Functions import gaussian_peak, read_data, find_peaks,\
+    filter_peaks, find_linear_parameters,\
+    fit_gaussian, weighted_arithmetic_mean,\
+    distance_conversion, reduced_chi_square,\
+    linear_function, find_residual
+from Second_Run.Parameters import SAVGOL_FILTER_PARAMETERS_1,\
+    SAVGOL_FILTER_PARAMETERS_2, PEAK_PROMINENCE
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
 RUN = "Second_Run"
 
-from Second_Run.Parameters import SAVGOL_FILTER_PARAMETERS_1,\
-    SAVGOL_FILTER_PARAMETERS_2, PEAK_PROMINENCE
-from Functions import gaussian_peak, read_data, find_peaks,\
-    filter_peaks, find_linear_parameters,\
-    fit_gaussian, weighted_arithmetic_mean,\
-    distance_conversion, reduced_chi_square,\
-    linear_function, find_residual
 
 FILENAME_1 = "{0}/Rising/Data/".format(RUN)
 FILENAME_2 = "{0}/Decreasing/Data/".format(RUN)
@@ -183,6 +183,7 @@ def plot_averages(data_1, data_2, y_ax_label, save_folder, save_title,
     plt.close()
     return
 
+
 def residual_plot(data1, data2):
     data1 = data1[1:-1]
     data2 = data2[1:-1]
@@ -190,19 +191,23 @@ def residual_plot(data1, data2):
     fig, axs = plt.subplots(2, 1)
     fig.set_size_inches(15, 6)
     fig.suptitle(FILENAME_1[: -1] + " and " + FILENAME_2[: -1] + "Residual plot",
-              fontsize=18, fontfamily='times new roman')
+                 fontsize=18, fontfamily='times new roman')
 
     rising_ax = axs[0]
     decreasing_ax = axs[1]
     rising_ax.set_title("Rising voltage",
-              fontsize=18, fontfamily='times new roman')
+                        fontsize=18, fontfamily='times new roman')
     decreasing_ax.set_title("Decreasing voltage",
-              fontsize=18, fontfamily='times new roman')
+                            fontsize=18, fontfamily='times new roman')
 
-    rising_ax.set_xlabel("Voltage [V]", fontsize=14, fontfamily='times new roman')
-    rising_ax.set_ylabel("Displacement [m]", fontsize=14, fontfamily='times new roman')
-    decreasing_ax.set_xlabel("Voltage [V]", fontsize=14, fontfamily='times new roman')
-    decreasing_ax.set_ylabel("Displacement [m]", fontsize=14, fontfamily='times new roman')
+    rising_ax.set_xlabel("Voltage [V]", fontsize=14,
+                         fontfamily='times new roman')
+    rising_ax.set_ylabel(
+        "Displacement [m]", fontsize=14, fontfamily='times new roman')
+    decreasing_ax.set_xlabel(
+        "Voltage [V]", fontsize=14, fontfamily='times new roman')
+    decreasing_ax.set_ylabel(
+        "Displacement [m]", fontsize=14, fontfamily='times new roman')
 
     m_1, c_1, _, _ = find_linear_parameters(data1)
     m_2, c_2, _, _ = find_linear_parameters(data2)
@@ -224,6 +229,7 @@ def residual_plot(data1, data2):
     plt.close()
 
     return
+
 
 def plot_visibility(data_1, data_2, save_folder, save_title):
     fig, axs = plt.subplots(1, 1)
@@ -305,7 +311,6 @@ def main():
     plot_visibility(visibility_1, visibility_2,
                     SAVE_FOLDER_AVERAGES,
                     "Visibility against Voltage")
-
 
 
 main()
