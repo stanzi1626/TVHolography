@@ -51,6 +51,13 @@ def filter_peaks(peaks, values, limit):
 def linear_function(x, m, c):
     return m*x + c
 
+def reduced_chi_square(data, param):
+    chi_square_total = 0
+    for datum in data:
+        chi_square_total += (((linear_function(datum[0], *param) -
+                               datum[1]) / datum[2]) ** 2)
+
+    return chi_square_total / len(data)
 
 def find_linear_parameters(data):
     try:

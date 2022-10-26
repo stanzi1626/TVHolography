@@ -13,7 +13,7 @@ from Parameters import SAVGOL_FILTER_PARAMETERS_1,\
 from Functions import gaussian_peak, read_data, find_peaks,\
     filter_peaks, find_linear_parameters,\
     fit_gaussian, weighted_arithmetic_mean,\
-    distance_conversion
+    distance_conversion, reduced_chi_square
 
 FILENAME_1 = "2022_10_04 Second Run/Rising/Data/"
 FILENAME_2 = "2022_10_04 Second Run/Decreasing/Data/"
@@ -151,6 +151,11 @@ def plot_averages(data_1, data_2, save_folder):
 
     m_1, c_1, sigma_m_1, sigma_c_1 = find_linear_parameters(data_1[1:-1])
     m_2, c_2, sigma_m_2, sigma_c_2 = find_linear_parameters(data_2[1:-1])
+
+    chi_1 = reduced_chi_square(data_1[1:-1], (m_1, c_1))
+    print("Rising reduced chi squared: ", chi_1)
+    chi_2 = reduced_chi_square(data_1[1:-1], (m_2, c_2))
+    print("Decreasing reduced chi squared: ", chi_2)
 
     plt.plot(np.linspace(0, 55), m_1*np.linspace(0, 55) + c_1, color='blue',
              label="Rising voltage: y =({0:.3g} $\pm$ {1:.3g})x"
