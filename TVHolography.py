@@ -81,16 +81,18 @@ def draw_plot(title, data, savgol_parameter, filename,
     # mean_fringe_spacing, mean_fringe_spacing_sigma = weighted_arithmetic_mean(
     #     fringe_spacing, fringe_spacing_uncertainty)
 
-    #average spacing in pixels
+    # average spacing in pixels
     average_fringe_spacing = np.average(fringe_spacing)
-    uncertainty_fringe_spacing = np.std(fringe_spacing) / np.sqrt(len(fringe_spacing))
+    uncertainty_fringe_spacing = np.std(
+        fringe_spacing) / np.sqrt(len(fringe_spacing))
 
     # pixels to metres
     pix_to_m = 465e2
     uncertainty_pix_to_m = 11e2
 
     metre_fringe_spacing = average_fringe_spacing / pix_to_m
-    uncertainty_metre_fringe_spacing = np.sqrt((1/pix_to_m)**2*uncertainty_fringe_spacing**2 + (average_fringe_spacing/(pix_to_m**2))**2*uncertainty_pix_to_m**2)
+    uncertainty_metre_fringe_spacing = np.sqrt((1/pix_to_m)**2*uncertainty_fringe_spacing**2 + (
+        average_fringe_spacing/(pix_to_m**2))**2*uncertainty_pix_to_m**2)
 
     axs.grid()
     axs.set_xlim((np.min(data[:, 0]), np.max(data[:, 0])))
