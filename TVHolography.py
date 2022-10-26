@@ -7,8 +7,11 @@ Created on Fri Feb 11 12:42:47 2022
 
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
 
-from Parameters import SAVGOL_FILTER_PARAMETERS_1,\
+RUN = "Second_Run"
+
+from Second_Run.Parameters import SAVGOL_FILTER_PARAMETERS_1,\
     SAVGOL_FILTER_PARAMETERS_2, PEAK_PROMINENCE
 from Functions import gaussian_peak, read_data, find_peaks,\
     filter_peaks, find_linear_parameters,\
@@ -16,12 +19,11 @@ from Functions import gaussian_peak, read_data, find_peaks,\
     distance_conversion, reduced_chi_square,\
     linear_function, find_residual
 
-RUN = "2022_10_18 Fourth"
-FILENAME_1 = "{0} Run/Rising/Data/".format(RUN)
-FILENAME_2 = "{0} Run/Decreasing/Data/".format(RUN)
-SAVE_FOLDER_1 = "{0} Run/Rising/Results/".format(RUN)
-SAVE_FOLDER_2 = "{0} Run/Decreasing/Results/".format(RUN)
-SAVE_FOLDER_AVERAGES = "{0} Run/Comparison/".format(RUN)
+FILENAME_1 = "{0}/Rising/Data/".format(RUN)
+FILENAME_2 = "{0}/Decreasing/Data/".format(RUN)
+SAVE_FOLDER_1 = "{0}/Rising/Results/".format(RUN)
+SAVE_FOLDER_2 = "{0}/Decreasing/Results/".format(RUN)
+SAVE_FOLDER_AVERAGES = "{0}/Comparison/".format(RUN)
 X_VARIABLE = "Voltage"
 Y_VARIABLE = 'Grey Value (Intensity)'
 
@@ -161,12 +163,12 @@ def plot_averages(data_1, data_2, y_ax_label, save_folder, save_title,
         chi_2 = reduced_chi_square(data_2[1:-1], (m_2, c_2))
         print("Decreasing reduced chi squared: ", chi_2)
 
-    plt.plot(np.linspace(0, 55), m_1*np.linspace(0, 55) + c_1, color='blue',
+    plt.plot(np.linspace(0, np.max(data_1[:, 0])), m_1*np.linspace(0, np.max(data_1[:, 0])) + c_1, color='blue',
              label="Rising voltage: y =({0:.3g} $\pm$ {1:.3g})x"
                    .format(m_1, sigma_m_1)
                    + " + {0:.3g} $\pm$ {1:.1g}"
                    .format(c_1, sigma_c_1))
-    plt.plot(np.linspace(0, 55), m_2*np.linspace(0, 55) + c_2, color='red',
+    plt.plot(np.linspace(0, np.max(data_1[:, 0])), m_2*np.linspace(0, np.max(data_1[:, 0])) + c_2, color='red',
              label="Decreasing voltage: y =({0:.3g} $\pm$ {1:.1g})x"
              .format(m_2, sigma_m_2)
              + " + {0:.3g} $\pm$ {1:.1g}"
