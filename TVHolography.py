@@ -13,13 +13,15 @@ from Parameters import SAVGOL_FILTER_PARAMETERS_1,\
 from Functions import gaussian_peak, read_data, find_peaks,\
     filter_peaks, find_linear_parameters,\
     fit_gaussian, weighted_arithmetic_mean,\
-    distance_conversion, reduced_chi_square
+    distance_conversion, reduced_chi_square,\
+    linear_function, find_residual
 
-FILENAME_1 = "2022_10_04 Second Run/Rising/Data/"
-FILENAME_2 = "2022_10_04 Second Run/Decreasing/Data/"
-SAVE_FOLDER_1 = "2022_10_04 Second Run/Rising/Results/"
-SAVE_FOLDER_2 = "2022_10_04 Second Run/Decreasing/Results/"
-SAVE_FOLDER_AVERAGES = "2022_10_04 Second Run/Comparison/"
+RUN = "2022_10_18 Fourth"
+FILENAME_1 = "{0} Run/Rising/Data/".format(RUN)
+FILENAME_2 = "{0} Run/Decreasing/Data/".format(RUN)
+SAVE_FOLDER_1 = "{0} Run/Rising/Results/".format(RUN)
+SAVE_FOLDER_2 = "{0} Run/Decreasing/Results/".format(RUN)
+SAVE_FOLDER_AVERAGES = "{0} Run/Comparison/".format(RUN)
 X_VARIABLE = "Voltage"
 Y_VARIABLE = 'Grey Value (Intensity)'
 
@@ -124,12 +126,13 @@ def draw_plot(title, data, savgol_parameter, filename,
             np.array((int(title), displacement, displ_err)))
 
 
-def plot_averages(data_1, data_2, save_folder):
+def plot_averages(data_1, data_2, y_ax_label, save_folder, save_title,
+                  display_chi=True):
     fig, axs = plt.subplots(1, 1)
     fig.set_size_inches(15, 6)
 
     axs.set_xlabel("Voltage [V]", fontsize=14, fontfamily='times new roman')
-    axs.set_ylabel("1 / Fringe seperation [$m^{-1}$]",
+    axs.set_ylabel(y_ax_label,
                    fontsize=14, fontfamily='times new roman')
     axs.set_title(FILENAME_1[: -1] + " and " + FILENAME_2[: -1],
                   fontsize=18, fontfamily='times new roman')
@@ -152,10 +155,11 @@ def plot_averages(data_1, data_2, save_folder):
     m_1, c_1, sigma_m_1, sigma_c_1 = find_linear_parameters(data_1[1:-1])
     m_2, c_2, sigma_m_2, sigma_c_2 = find_linear_parameters(data_2[1:-1])
 
-    chi_1 = reduced_chi_square(data_1[1:-1], (m_1, c_1))
-    print("Rising reduced chi squared: ", chi_1)
-    chi_2 = reduced_chi_square(data_1[1:-1], (m_2, c_2))
-    print("Decreasing reduced chi squared: ", chi_2)
+    if display_chi:
+        chi_1 = reduced_chi_square(data_1[1:-1], (m_1, c_1))
+        print("Rising reduced chi squared: ", chi_1)
+        chi_2 = reduced_chi_square(data_2[1:-1], (m_2, c_2))
+        print("Decreasing reduced chi squared: ", chi_2)
 
     plt.plot(np.linspace(0, 55), m_1*np.linspace(0, 55) + c_1, color='blue',
              label="Rising voltage: y =({0:.3g} $\pm$ {1:.3g})x"
@@ -172,13 +176,51 @@ def plot_averages(data_1, data_2, save_folder):
     plt.legend()
 
     plt.tight_layout()
-    plt.savefig(save_folder + "(Average fringe seperation)^-1 against Voltage",
+    plt.savefig(save_folder + save_title,
                 dpi=300, transparent=False)
-    # plt.close()
+    plt.close()
     return
 
+def residual_plot(data1, data2):
+    data1 = data1[1:-1]
+    data2 = data2[1:-1]
 
-def plot_visibility(data_1, data_2, save_folder):
+    fig = plt.figure()
+    fig.set_size_inches(15, 6)
+    plt.title(FILENAME_1[: -1] + " and " + FILENAME_2[: -1] + "Residual plot",
+              fontsize=18, fontfamily='times new roman')
+
+    rising_ax = fig.add_subplot(211)
+    decreasing_ax = fig.add_subplot(212)
+    rising_ax.set_title("Rising voltage",
+              fontsize=18, fontfamily='times new roman')
+    decreasing_ax.set_title("Decreasing voltage",
+              fontsize=18, fontfamily='times new roman')
+
+    rising_ax.set_xlabel("Voltage [V]", fontsize=14, fontfamily='times new roman')
+    rising_ax.set_ylabel("Displacement [m]", fontsize=14, fontfamily='times new roman')
+    decreasing_ax.set_xlabel("Voltage [V]", fontsize=14, fontfamily='times new roman')
+    decreasing_ax.set_ylabel("Displacement [m]", fontsize=14, fontfamily='times new roman')
+
+    m_1, c_1, _, _ = find_linear_parameters(data1)
+    m_2, c_2, _, _ = find_linear_parameters(data2)
+
+    fitted_y_data1 = find_residual(data1, (m_1, c_1))
+    fitted_y_data2 = find_residual(data2, (m_2, c_2))
+
+    rising_ax.errorbar(data1[:, 0], fitted_y_data1, data1[:, 2], fmt='bx')
+    rising_ax.axhline(c='b')
+    decreasing_ax.errorbar(data2[:, 0], fitted_y_data2, data2[:, 2], fmt='rx')
+    decreasing_ax.axhline(c='r')
+
+    rising_ax.grid()
+    decreasing_ax.grid()
+
+    plt.tight_layout()
+
+    return
+
+def plot_visibility(data_1, data_2, save_folder, save_title):
     fig, axs = plt.subplots(1, 1)
     fig.set_size_inches(15, 6)
 
@@ -196,6 +238,9 @@ def plot_visibility(data_1, data_2, save_folder):
     axs.grid()
 
     plt.tight_layout()
+    plt.savefig(save_folder + save_title,
+                dpi=300, transparent=False)
+    plt.close()
 
     return
 
@@ -205,7 +250,8 @@ def main():
     all_data_2 = read_data(FILENAME_2)
     averages_1 = np.empty((0, 3))
     averages_2 = np.empty((0, 3))
-
+    displacement_1 = np.empty((0, 3))
+    displacement_2 = np.empty((0, 3))
     visibility_1 = np.empty((0, 2))
     visibility_2 = np.empty((0, 2))
 
@@ -217,6 +263,7 @@ def main():
                                                    SAVE_FOLDER_1, PEAK_PROMINENCE["Rising"],
                                                    "Rising")
             averages_1 = np.vstack((averages_1, avg_data_1))
+            displacement_1 = np.vstack((displacement_1, displ_1))
             visibility_1 = np.vstack((visibility_1, vis_1))
 
         else:
@@ -230,13 +277,30 @@ def main():
                                                    PEAK_PROMINENCE["Decreasing"],
                                                    "Decreasing")
             averages_2 = np.vstack((averages_2, avg_data_2))
+            displacement_2 = np.vstack((displacement_2, displ_2))
             visibility_2 = np.vstack((visibility_2, vis_2))
         else:
             print("No (valid) files provided, ending program")
     plot_averages(np.sort(averages_1, axis=0),
-                  np.sort(averages_2, axis=0), SAVE_FOLDER_AVERAGES)
+                  np.sort(averages_2, axis=0),
+                  "1 / Fringe seperation [$m^{-1}$]",
+                  SAVE_FOLDER_AVERAGES,
+                  "(Average fringe seperation)^-1 against Voltage")
 
-    plot_visibility(visibility_1, visibility_2, '')
+    plot_averages(np.sort(displacement_1, axis=0),
+                  np.sort(displacement_2, axis=0),
+                  "PZT Displacement [$m$]",
+                  SAVE_FOLDER_AVERAGES,
+                  "PZT displacement against Voltage",
+                  False)
+
+    residual_plot(np.sort(displacement_1, axis=0),
+                  np.sort(displacement_2, axis=0))
+
+    plot_visibility(visibility_1, visibility_2,
+                    SAVE_FOLDER_AVERAGES,
+                    "Visibility against Voltage")
+
 
 
 main()

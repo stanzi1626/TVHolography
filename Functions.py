@@ -99,7 +99,8 @@ def gaussian_curve(x_data, A, sigma, mu):
 
 def gaussian_peak(data, mean, axis):
     param, cov = curve_fit(gaussian_curve, data[:, 0], data[:, 1],
-                           p0=[1.5, len(data[:, 0]), mean])
+                           p0=[1.5, len(data[:, 0]), mean],
+                           maxfev=1000000)
     axis.plot(np.linspace(np.min(data[:, 0]), np.max(data[:, 0])),
               gaussian_curve(np.linspace(np.min(data[:, 0]), np.max(data[:, 0])), *param), 'g--')
     return param[2], np.sqrt(cov[2, 2])
@@ -128,3 +129,12 @@ def distance_conversion(pixel_dist, pixel_err):
                                          (scrn_len * pix_to_m * pixel_err / (pixel_dist ** 2)) ** 2)
 
     return displ, displ_err
+
+def find_residual(data, param):
+    x_data = data[:, 0]
+    y_data = data[:, 1]
+    fitted_y_data = linear_function(x_data, *param)
+
+    y_diff = y_data - fitted_y_data
+
+    return y_diff
