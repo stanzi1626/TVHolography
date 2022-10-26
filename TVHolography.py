@@ -185,13 +185,13 @@ def residual_plot(data1, data2):
     data1 = data1[1:-1]
     data2 = data2[1:-1]
 
-    fig = plt.figure()
+    fig, axs = plt.subplots(2, 1)
     fig.set_size_inches(15, 6)
-    plt.title(FILENAME_1[: -1] + " and " + FILENAME_2[: -1] + "Residual plot",
+    fig.suptitle(FILENAME_1[: -1] + " and " + FILENAME_2[: -1] + "Residual plot",
               fontsize=18, fontfamily='times new roman')
 
-    rising_ax = fig.add_subplot(211)
-    decreasing_ax = fig.add_subplot(212)
+    rising_ax = axs[0]
+    decreasing_ax = axs[1]
     rising_ax.set_title("Rising voltage",
               fontsize=18, fontfamily='times new roman')
     decreasing_ax.set_title("Decreasing voltage",
@@ -217,6 +217,9 @@ def residual_plot(data1, data2):
     decreasing_ax.grid()
 
     plt.tight_layout()
+    plt.savefig(SAVE_FOLDER_AVERAGES + "Residuals",
+                dpi=300, transparent=False)
+    plt.close()
 
     return
 
