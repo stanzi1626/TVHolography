@@ -121,7 +121,7 @@ def draw_plot(title, data, savgol_parameter, filename,
                       (1 / (metre_fringe_spacing) ** 2)
                       * uncertainty_metre_fringe_spacing)),
             np.array((int(title), visibility)),
-            np.array((int(title, displacement, displ_err))))
+            np.array((int(title), displacement, displ_err)))
 
 
 def plot_averages(data_1, data_2, save_folder):
