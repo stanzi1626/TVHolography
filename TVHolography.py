@@ -32,7 +32,7 @@ def draw_plot(title, data, savgol_parameter, filename,
     fig, axs = plt.subplots(1, 1)
     fig.set_size_inches(15, 6)
 
-    axs.set_xlabel("Distance [Pixels]", fontsize=14,
+    axs.set_xlabel("Distance (Pixels)", fontsize=14,
                    fontfamily='times new roman')
     axs.set_ylabel(Y_VARIABLE, fontsize=14, fontfamily='times new roman')
     axs.set_title(filename[: -1] + "-" + title + "V", fontsize=18,
@@ -55,8 +55,10 @@ def draw_plot(title, data, savgol_parameter, filename,
                                                             savgol_parameter))
 
     if len(filtered_peaks) > 4 and len(filtered_troughs) > 4:
-        I_max = fit_gaussian(filtered_peaks, filtered_data[filtered_peaks], axs)
-        I_min = fit_gaussian(filtered_troughs, filtered_data[filtered_troughs], axs)
+        I_max = fit_gaussian(
+            filtered_peaks, filtered_data[filtered_peaks], axs)
+        I_min = fit_gaussian(
+            filtered_troughs, filtered_data[filtered_troughs], axs)
 
         try:
             visibility = (I_max - I_min) / (I_max + I_min)
@@ -90,9 +92,10 @@ def draw_plot(title, data, savgol_parameter, filename,
     # mean_fringe_spacing, mean_fringe_spacing_sigma = weighted_arithmetic_mean(
     #     fringe_spacing, fringe_spacing_uncertainty)
 
-    #average spacing in pixels
+    # average spacing in pixels
     average_fringe_spacing = np.average(fringe_spacing)
-    uncertainty_fringe_spacing = np.std(fringe_spacing) / np.sqrt(len(fringe_spacing))
+    uncertainty_fringe_spacing = np.std(
+        fringe_spacing) / np.sqrt(len(fringe_spacing))
 
     # pixels to metres
     pix_to_m = 465e2
@@ -105,7 +108,7 @@ def draw_plot(title, data, savgol_parameter, filename,
                                                uncertainty_pix_to_m**2)
 
     displacement, displ_err = distance_conversion(average_fringe_spacing,
-                                           uncertainty_fringe_spacing)
+                                                  uncertainty_fringe_spacing)
 
     axs.grid()
     axs.set_xlim((np.min(data[:, 0]), np.max(data[:, 0])))
@@ -115,21 +118,18 @@ def draw_plot(title, data, savgol_parameter, filename,
     plt.close()
 
     return (np.array((int(title), 1 / (metre_fringe_spacing),
-                    (1 / (metre_fringe_spacing) ** 2)
-                    * uncertainty_metre_fringe_spacing)),
+                      (1 / (metre_fringe_spacing) ** 2)
+                      * uncertainty_metre_fringe_spacing)),
             np.array((int(title), visibility)),
             np.array((int(title, displacement, displ_err))))
 
-# what is the array meant to have?
-# title, 1/fringe spacing, erro on 1/fringe spacing?
-# idk ill doube check, coz it looks wrong
 
 def plot_averages(data_1, data_2, save_folder):
     fig, axs = plt.subplots(1, 1)
     fig.set_size_inches(15, 6)
 
     axs.set_xlabel("Voltage [V]", fontsize=14, fontfamily='times new roman')
-    axs.set_ylabel("1 / Fringe separation [m^-1]",
+    axs.set_ylabel("1 / Fringe seperation [$m^{-1}$]",
                    fontsize=14, fontfamily='times new roman')
     axs.set_title(FILENAME_1[: -1] + " and " + FILENAME_2[: -1],
                   fontsize=18, fontfamily='times new roman')
@@ -177,6 +177,7 @@ def plot_averages(data_1, data_2, save_folder):
     # plt.close()
     return
 
+
 def plot_visibility(data_1, data_2, save_folder):
     fig, axs = plt.subplots(1, 1)
     fig.set_size_inches(15, 6)
@@ -198,6 +199,7 @@ def plot_visibility(data_1, data_2, save_folder):
 
     return
 
+
 def main():
     all_data_1 = read_data(FILENAME_1)
     all_data_2 = read_data(FILENAME_2)
@@ -210,13 +212,12 @@ def main():
     for data in all_data_1:
         if len(data[1]) > 0:
             avg_data_1, vis_1, displ_1 = draw_plot(data[0], data[1],
-                                    SAVGOL_FILTER_PARAMETERS_1[data[0]],
-                                    FILENAME_1,
-                                    SAVE_FOLDER_1, PEAK_PROMINENCE["Rising"],
-                                    "Rising")
+                                                   SAVGOL_FILTER_PARAMETERS_1[data[0]],
+                                                   FILENAME_1,
+                                                   SAVE_FOLDER_1, PEAK_PROMINENCE["Rising"],
+                                                   "Rising")
             averages_1 = np.vstack((averages_1, avg_data_1))
             visibility_1 = np.vstack((visibility_1, vis_1))
-
 
         else:
             print("No (valid) files provided, ending program")
@@ -224,10 +225,10 @@ def main():
     for data in all_data_2:
         if len(data[1]) > 0:
             avg_data_2, vis_2, displ_2 = draw_plot(data[0], data[1],
-                                    SAVGOL_FILTER_PARAMETERS_2[data[0]],
-                                    FILENAME_2, SAVE_FOLDER_2,
-                                    PEAK_PROMINENCE["Decreasing"],
-                                    "Decreasing")
+                                                   SAVGOL_FILTER_PARAMETERS_2[data[0]],
+                                                   FILENAME_2, SAVE_FOLDER_2,
+                                                   PEAK_PROMINENCE["Decreasing"],
+                                                   "Decreasing")
             averages_2 = np.vstack((averages_2, avg_data_2))
             visibility_2 = np.vstack((visibility_2, vis_2))
         else:

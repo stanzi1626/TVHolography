@@ -5,7 +5,7 @@ from scipy.signal import savgol_filter
 from scipy.signal import find_peaks as fp
 from scipy.ndimage import gaussian_filter
 
-FILTER_TYPE = 1 # 0 = gaussian convolution, 1 = savgol filter
+FILTER_TYPE = 1  # 0 = gaussian convolution, 1 = savgol filter
 
 
 def read_data(file_name):
@@ -23,7 +23,7 @@ def read_data(file_name):
 
             invalid_index = np.unique(np.append(invalid_index, nan_index))
             valid_data = np.delete(data, invalid_index.astype(int), 0)
-            # print(filename, " accepted")
+            print(filename, " accepted")
 
         except IOError:
             print("Error: ", filename, " directory not found")
@@ -36,9 +36,9 @@ def read_data(file_name):
 
 
 def find_peaks(data, savgol_parameter, peak_prominence):
-    if FILTER_TYPE==0:
-        filtered_data=gaussian_smooth_filter(data[:, 1], sigma=5)
-    elif FILTER_TYPE==1:
+    if FILTER_TYPE == 0:
+        filtered_data = gaussian_smooth_filter(data[:, 1], sigma=5)
+    elif FILTER_TYPE == 1:
         filtered_data = savgol_filter(data[:, 1], savgol_parameter, 2)
     peaks, _ = fp(filtered_data, prominence=peak_prominence)
     return peaks, filtered_data
@@ -51,6 +51,7 @@ def filter_peaks(peaks, values, limit):
 def linear_function(x, m, c):
     return m*x + c
 
+
 def reduced_chi_square(data, param):
     chi_square_total = 0
     for datum in data:
@@ -58,6 +59,7 @@ def reduced_chi_square(data, param):
                                datum[1]) / datum[2]) ** 2)
 
     return chi_square_total / len(data)
+
 
 def find_linear_parameters(data):
     try:
@@ -70,7 +72,7 @@ def find_linear_parameters(data):
               ' starting guesses')
 
     return expected[0], expected[1],\
-           np.sqrt(uncertainty[0, 0]), np.sqrt(uncertainty[1, 1])
+        np.sqrt(uncertainty[0, 0]), np.sqrt(uncertainty[1, 1])
 
 
 def gaussian_smooth_filter(y_data, sigma):
@@ -83,7 +85,8 @@ def fit_gaussian(x_data, y_data, axis):
     param, _ = curve_fit(gaussian_curve, x_data, y_data,
                          p0=[1.5, std_guess, mu_guess])
     # uncertainty = np.sqrt(np.diagonal(cov))
-    fitted_data = gaussian_curve(np.linspace(np.min(x_data), np.max(x_data)), *param)
+    fitted_data = gaussian_curve(np.linspace(
+        np.min(x_data), np.max(x_data)), *param)
     axis.plot(np.linspace(np.min(x_data), np.max(x_data)),
               fitted_data, 'g--')
     return np.max(fitted_data)
@@ -108,6 +111,7 @@ def weighted_arithmetic_mean(data, uncertanties):
         np.sum(weighted_uncertanties)
     weighted_mean_standard_error = 1 / np.sqrt(np.sum(weighted_uncertanties))
     return weighted_mean, weighted_mean_standard_error
+
 
 def distance_conversion(pixel_dist, pixel_err):
     pix_to_m = 465e2

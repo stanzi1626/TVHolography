@@ -1,4 +1,4 @@
-SAVGOL_FILTER_PARAMETERS_1 = {"00": 201, #savgol parameters for increasing voltage
+SAVGOL_FILTER_PARAMETERS_1 = {"00": 501, #savgol parameters for increasing voltage
                             "05": 151,
                             "10": 131,
                             "15": 101,
@@ -13,7 +13,7 @@ SAVGOL_FILTER_PARAMETERS_1 = {"00": 201, #savgol parameters for increasing volta
                             "60": 11,
                             "65": 11,
                             "70": 11,}
-SAVGOL_FILTER_PARAMETERS_2 = {"00": 201, #savgol parameters for decreasing voltage
+SAVGOL_FILTER_PARAMETERS_2 = {"00": 501, #savgol parameters for decreasing voltage
                             "05": 151,
                             "10": 131,
                             "15": 101,
@@ -29,6 +29,6 @@ SAVGOL_FILTER_PARAMETERS_2 = {"00": 201, #savgol parameters for decreasing volta
                             "65": 11,
                             "70": 11,}
 PEAK_PROMINENCE = {
-    "Rising": 0.1,
+    "Rising": 0.05,
     "Decreasing": 0.02
 }
