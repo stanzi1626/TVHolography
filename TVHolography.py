@@ -88,10 +88,11 @@ def draw_plot(title, data, savgol_parameter, filename,
         mean_peak.append(mean)
 
     fringe_spacing = np.diff(mean_peak)
-    fringe_spacing_uncertainty = []
-    for i in range(len(mean_peak) - 1):
-        uncertainty = np.sqrt(sigmas[i]**2 + sigmas[i + 1]**2)
-        fringe_spacing_uncertainty.append(uncertainty)
+    
+    # fringe_spacing_uncertainty = []
+    # for i in range(len(mean_peak) - 1):
+    #     uncertainty = np.sqrt(sigmas[i]**2 + sigmas[i + 1]**2)
+    #     fringe_spacing_uncertainty.append(uncertainty)
 
     # mean_fringe_spacing, mean_fringe_spacing_sigma = weighted_arithmetic_mean(
     #     fringe_spacing, fringe_spacing_uncertainty)
@@ -203,11 +204,11 @@ def residual_plot(data1, data2):
     rising_ax.set_xlabel("Voltage [V]", fontsize=14,
                          fontfamily='times new roman')
     rising_ax.set_ylabel(
-        "Displacement [m]", fontsize=14, fontfamily='times new roman')
+        "Deformation [m]", fontsize=14, fontfamily='times new roman')
     decreasing_ax.set_xlabel(
         "Voltage [V]", fontsize=14, fontfamily='times new roman')
     decreasing_ax.set_ylabel(
-        "Displacement [m]", fontsize=14, fontfamily='times new roman')
+        "Deformation [m]", fontsize=14, fontfamily='times new roman')
 
     m_1, c_1, _, _ = find_linear_parameters(data1)
     m_2, c_2, _, _ = find_linear_parameters(data2)
@@ -300,7 +301,7 @@ def main():
 
     plot_averages(np.sort(displacement_1, axis=0),
                   np.sort(displacement_2, axis=0),
-                  "PZT Displacement [$m$]",
+                  "PZT Deformation [$m$]",
                   SAVE_FOLDER_AVERAGES,
                   "PZT displacement against Voltage",
                   False)
