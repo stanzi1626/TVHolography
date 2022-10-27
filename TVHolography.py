@@ -75,8 +75,8 @@ def draw_plot(title, data, savgol_parameter, filename,
     peak_diff = np.diff(filtered_peaks)
     fringe_spacing_guess = np.average(peak_diff)
 
-    sigmas = []
-    mean_peak = []
+    sigmas = np.array([])
+    mean_peak = np.array([])
 
     # plot a gaussian at each peack using the average fringe spacing as the width
     for peak in filtered_peaks:
@@ -84,15 +84,12 @@ def draw_plot(title, data, savgol_parameter, filename,
             data[:, 0] < peak + fringe_spacing_guess / 2)
             & (data[:, 0] > peak - fringe_spacing_guess / 2))],
             peak, axs)
-        sigmas.append(uncertainty)
-        mean_peak.append(mean)
+        sigmas = np.append(sigmas, uncertainty)
+        mean_peak = np.append(mean_peak, mean)
 
     fringe_spacing = np.diff(mean_peak)
-    
-    # fringe_spacing_uncertainty = []
-    # for i in range(len(mean_peak) - 1):
-    #     uncertainty = np.sqrt(sigmas[i]**2 + sigmas[i + 1]**2)
-    #     fringe_spacing_uncertainty.append(uncertainty)
+
+    fringe_spacing_uncertainty = np.sqrt(sigmas[1:]**2 + sigmas[:-1]**2)
 
     # mean_fringe_spacing, mean_fringe_spacing_sigma = weighted_arithmetic_mean(
     #     fringe_spacing, fringe_spacing_uncertainty)
@@ -102,18 +99,25 @@ def draw_plot(title, data, savgol_parameter, filename,
     uncertainty_fringe_spacing = np.std(
         fringe_spacing) / np.sqrt(len(fringe_spacing))
 
+    # weighted average spacing in pixels
+    w_average_fringe_spacing, weighted_err = np.average(fringe_spacing,
+                                        weights=1/(fringe_spacing_uncertainty**2),
+                                        returned=True)
+    w_uncertainty_fringe_spacing = 1/np.sqrt(weighted_err)
+
     # pixels to metres
     pix_to_m = 465e2
     uncertainty_pix_to_m = 11e2
 
-    metre_fringe_spacing = average_fringe_spacing / pix_to_m
+    # can switch between average and weighted average by adding a w_ in front of variables
+    metre_fringe_spacing = w_average_fringe_spacing / pix_to_m
 
-    uncertainty_metre_fringe_spacing = np.sqrt((1/pix_to_m)**2 * uncertainty_fringe_spacing**2 +
-                                               (average_fringe_spacing/(pix_to_m**2))**2 *
+    uncertainty_metre_fringe_spacing = np.sqrt((1/pix_to_m)**2 * w_uncertainty_fringe_spacing**2 +
+                                               (w_average_fringe_spacing/(pix_to_m**2))**2 *
                                                uncertainty_pix_to_m**2)
 
-    displacement, displ_err = distance_conversion(average_fringe_spacing,
-                                                  uncertainty_fringe_spacing)
+    displacement, displ_err = distance_conversion(w_average_fringe_spacing,
+                                                  w_uncertainty_fringe_spacing)
 
     axs.grid()
     axs.set_xlim((np.min(data[:, 0]), np.max(data[:, 0])))
