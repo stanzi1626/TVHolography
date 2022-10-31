@@ -47,8 +47,8 @@ def draw_plot(title, data, savgol_parameter, filename,
     flipped_data = data
     flipped_data[:, 1] = -data[:, 1]
     troughs, _ = find_peaks(flipped_data, savgol_parameter, peak_prominence)
-    filtered_peaks = filter_peaks(peaks, filtered_data, 0.5)
-    filtered_troughs = filter_peaks(troughs, filtered_data, 0.3)
+    filtered_peaks = filter_peaks(peaks, filtered_data, 1)
+    filtered_troughs = filter_peaks(troughs, filtered_data, 1)
 
     axs.plot(data[:, 0], filtered_data, 'r--')
 
@@ -58,7 +58,7 @@ def draw_plot(title, data, savgol_parameter, filename,
     print(("{0}V {1} with savgol parameter of: {2}").format(title, direction,
                                                             savgol_parameter))
 
-    if len(filtered_peaks) > 4 and len(filtered_troughs) > 4:
+    if len(filtered_peaks) > 3 and len(filtered_troughs) > 3:
         I_max = fit_gaussian(
             filtered_peaks, filtered_data[filtered_peaks], axs)
         I_min = fit_gaussian(
@@ -169,18 +169,28 @@ def plot_averages(data_1, data_2, y_ax_label, save_folder, save_title,
         print("Decreasing reduced chi squared: ", chi_2)
 
     plt.plot(np.linspace(0, np.max(data_1[:, 0])), m_1*np.linspace(0, np.max(data_1[:, 0])) + c_1, color='blue',
-             label="Rising voltage: y =({0:.3g} $\pm$ {1:.3g})x"
+             label="Rising voltage: y =({0:.3g} +/- {1:.1g})x"
                    .format(m_1, sigma_m_1)
-                   + " + {0:.3g} $\pm$ {1:.1g}"
+                   + " + {0:.3g} +/- {1:.1g}"
                    .format(c_1, sigma_c_1))
     plt.plot(np.linspace(0, np.max(data_1[:, 0])), m_2*np.linspace(0, np.max(data_1[:, 0])) + c_2, color='red',
-             label="Decreasing voltage: y =({0:.3g} $\pm$ {1:.1g})x"
+             label="Decreasing voltage: y =({0:.3g} +/- {1:.1g})x"
              .format(m_2, sigma_m_2)
-             + " + {0:.3g} $\pm$ {1:.1g}"
+             + " + {0:.3g} +/- {1:.1g}"
              .format(c_2, sigma_c_2))
 
+    print("Rising voltage: y =({0:.3g} +/- {1:.2g})x"
+          .format(m_1, sigma_m_1)
+          + " + ({0:.3g} +/- {1:.2g})"
+          .format(c_1, sigma_c_1))
+
+    print("Decreasing voltage: y =({0:.3g} +/- {1:.2g})x"
+    .format(m_2, sigma_m_2)
+    + " + ({0:.3g} +/- {1:.2g})"
+    .format(c_2, sigma_c_2))
+
     axs.grid()
-    plt.legend()
+    # plt.legend()
 
     plt.tight_layout()
     plt.savefig(save_folder + save_title,

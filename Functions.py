@@ -98,9 +98,12 @@ def gaussian_curve(x_data, A, sigma, mu):
 
 
 def gaussian_peak(data, mean, axis):
-    param, cov = curve_fit(gaussian_curve, data[:, 0], data[:, 1],
-                           p0=[1.5, len(data[:, 0]), mean],
-                           maxfev=1000000)
+    try:
+        param, cov = curve_fit(gaussian_curve, data[:, 0], data[:, 1],
+                               p0=[1.5, len(data[:, 0]), mean],
+                               maxfev=1000000)
+    except ValueError:
+        return 0, 0
     axis.plot(np.linspace(np.min(data[:, 0]), np.max(data[:, 0])),
               gaussian_curve(np.linspace(np.min(data[:, 0]), np.max(data[:, 0])), *param), 'g--')
     return param[2], np.sqrt(cov[2, 2])
