@@ -7,9 +7,9 @@ Created on Fri Feb 11 12:42:47 2022
 
 from Functions import gaussian_peak, read_data, find_peaks,\
     filter_peaks, find_linear_parameters,\
-    fit_gaussian, weighted_arithmetic_mean,\
+    fit_gaussian, find_residual,\
     distance_conversion, reduced_chi_square,\
-    linear_function, find_residual
+    linear_function
 from Second_Run.Parameters import SAVGOL_FILTER_PARAMETERS_1,\
     SAVGOL_FILTER_PARAMETERS_2, PEAK_PROMINENCE
 import numpy as np
@@ -90,9 +90,6 @@ def draw_plot(title, data, savgol_parameter, filename,
     fringe_spacing = np.diff(mean_peak)
 
     fringe_spacing_uncertainty = np.sqrt(sigmas[1:]**2 + sigmas[:-1]**2)
-
-    # mean_fringe_spacing, mean_fringe_spacing_sigma = weighted_arithmetic_mean(
-    #     fringe_spacing, fringe_spacing_uncertainty)
 
     # average spacing in pixels
     average_fringe_spacing = np.average(fringe_spacing)

@@ -109,14 +109,6 @@ def gaussian_peak(data, mean, axis):
     return param[2], np.sqrt(cov[2, 2])
 
 
-def weighted_arithmetic_mean(data, uncertanties):
-    weighted_uncertanties = np.power(np.power(uncertanties, 2), -1)
-    weighted_mean = np.sum(weighted_uncertanties * data) / \
-        np.sum(weighted_uncertanties)
-    weighted_mean_standard_error = 1 / np.sqrt(np.sum(weighted_uncertanties))
-    return weighted_mean, weighted_mean_standard_error
-
-
 def distance_conversion(pixel_dist, pixel_err):
     pix_to_m = 465e2
     pix_to_m_err = 11e2
