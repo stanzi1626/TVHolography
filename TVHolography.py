@@ -10,13 +10,13 @@ from Functions import gaussian_peak, read_data, find_peaks,\
     fit_gaussian, find_residual,\
     distance_conversion, reduced_chi_square,\
     linear_function
-from Second_Run.Parameters import SAVGOL_FILTER_PARAMETERS_1,\
+from Fourth_Run.Parameters import SAVGOL_FILTER_PARAMETERS_1,\
     SAVGOL_FILTER_PARAMETERS_2, PEAK_PROMINENCE
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
-RUN = "Second_Run"
+RUN = "Fourth_Run"
 
 
 FILENAME_1 = "{0}/Rising/Data/".format(RUN)
