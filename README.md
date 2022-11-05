@@ -1,1 +1,1 @@
-# Switch to Mn-17 Oct
+# Switch to Mon-17 Oct
